@@ -16,9 +16,21 @@ def get_db_connection():
 #Define a route to hello function
 @app.route('/')
 def hello():
-    if 'username' in session:
-        return redirect(url_for('home'))
-    return render_template('index.html')
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    query = """
+        SELECT operated_by, flight_num, departure_time, arrival_time, status_, arrives, departs
+        FROM flight
+    """
+    cursor.execute(query)
+    data1 = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    # Important: pass it as "data" to match the template
+    return render_template('index.html', data=data1)
 
 #Define route for login
 @app.route('/login')
