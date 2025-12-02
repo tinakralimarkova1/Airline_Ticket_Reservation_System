@@ -5,7 +5,7 @@
     <style>
         /* Styling for the navigation bar */
         nav {
-            background-color: black;
+            background-color: rgb(54, 96, 180);
             color: white;
             text-align: left;
             height: 50px;
@@ -15,7 +15,7 @@
         }
 
         a:link {
-            color: blue;
+            color: rgb(255, 255, 255);
         }
 
         a:visited {
@@ -23,11 +23,11 @@
         }
 
         a:hover {
-            color: blue;
+            color: rgb(100, 158, 19);
         }
 
         a:active {
-            color: red;
+            color: rgb(15, 204, 150);
         }
 
         a:link, a:visited {
@@ -42,7 +42,7 @@
         }
 
         table, th, td {
-            border: 1px solid black;
+            border: 3px solid black;
             border-collapse: collapse;
             padding: 8px;
         }
@@ -79,29 +79,33 @@
         .text {font-size: 11px}
         }
 
+        .welcome {
+            text-align: center;
+        }
+
+        .table-title {
+            text-align: center;
+        }
+
     </style>
 </head>
 <body>
     <nav>
         <a href="/">Home</a>
-        <a href="/logUser">Login</a>
-        <a href="/regUser">Register</a>
+        <a href="/login">Login</a>
+        <a href="/register">Register</a>
     </nav>
 
+    <div class="welcome">
+        <h1>Welcome to Airline Reservation System</h1>
+    </div>
 
-        <div class="mySlides fade">
-            <img src="{{ url_for('static', filename='images/blue.jpeg') }}" style="width:100%">
+    <div class="table-title">
+        <h3>Upcoming Flights</h3>
+    </div>
 
-        </div>
-        
-        <div class="mySlides fade">
-            <img src="{{ url_for('static', filename='images/pretty.jpeg') }}" style="width:100%">
-        </div>
-        
-        <div class="mySlides fade">
-            <img src="{{ url_for('static', filename='images/sunset.jpeg') }}" style="width:100%">
-        </div>
-        
+
+      
         
 
     <div class="table-container">
@@ -127,6 +131,33 @@
                 <td>{{ line[6] }}</td>
             </tr>
             {% endfor %}
+        </table>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <tr>
+                <th>Airline Name</th>
+                <th>Flight Number</th>
+                <th>Departure Time</th>
+                <th>Arrival Time</th>
+                <th>Status</th>
+                <th>Arrival Airport Name</th>
+                <th>Departure Airport Name</th>
+
+                {% for line in data1 %}
+                <tr>
+                    <td>{{ line[0] }}</td>
+                    <td>{{ line[1] }}</td>
+                    <td>{{ line[2] }}</td>
+                    <td>{{ line[3] }}</td>
+                    <td>{{ line[4] }}</td>
+                    <td>{{ line[5] }}</td>
+                    <td>{{ line[6] }}</td>
+                </tr>
+                {% endfor %}
+
+            </tr>
         </table>
     </div>
 

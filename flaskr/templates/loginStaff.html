@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+	<link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+	<nav>
+        <a href="/">Home</a>
+        <a href="/logUser">Login</a>
+        <a href="/regUser">Register</a>
+    </nav>
+
+    <div class="selection">
+        <h1>Airline Staff Login</h1>
+        <form action="/login_staff" method="POST">
+            <input type="text" name="username" placeholder="Username" required/> <br>
+            <input type="password" name="password" placeholder="Password" required/> <br>
+            <input type="submit" value="Login" />
+            {% if error %}
+                <p class="error"><strong>Error:</strong> {{ error }}</p>
+            {% endif %}
+        </form>
+    
+        <!-- Apply the no-style-link class to the 'Go back' link -->
+        <a href="/" class="no-style-link">Go back</a>
+    </div>
+
+</body>
+</html>

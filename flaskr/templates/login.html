@@ -1,21 +1,24 @@
-<!-- page takes user to 3 options for logiin in -->
-
+<!-- logUser.html -->
+<!DOCTYPE html>
 <html>
 <head>
+    <title>Select Role</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
-<form action="/loginAuth" method="POST">
-	<input type="text" name = "username" placeholder="username" required/> </br>
-	<input type="password" name = "password" placeholder="password" required/></br>
-	<input type="submit" value = Login />
-	{% if error %}
-		<p class="error"><strong>Error:</strong> {{error}}</p>
-	{% endif %}
-</form>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/logUser">Login</a>
+        <a href="/regUser">Register</a>
+    </nav>
 
-<a href="/">Go back</a>
-
+    <div class="selection">
+        <h1>Select Your Role</h1>
+        <form action="/logUser" method="POST">
+            <button type="submit" name="role" value="customer">Customer</button>
+            <button type="submit" name="role" value="booking_agent">Booking Agent</button>
+            <button type="submit" name="role" value="airline_staff">Airline Staff</button>
+        </form>
+    </div>
 </body>
-
-
 </html>

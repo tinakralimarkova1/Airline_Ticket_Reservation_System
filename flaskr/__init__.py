@@ -22,6 +22,7 @@ def hello():
     query = """
         SELECT operated_by, flight_num, departure_time, arrival_time, status_, arrives, departs
         FROM flight
+        WHERE status_ = 'upcoming'
     """
     cursor.execute(query)
     data1 = cursor.fetchall()
@@ -29,13 +30,49 @@ def hello():
     cursor.close()
     conn.close()
 
-    # Important: pass it as "data" to match the template
+   
     return render_template('index.html', data=data1)
+
+
+@app.route('/logUser', methods=['GET', 'POST'])
+def select_role():
+#When user selects a button, it is registered here and redirects to the appropriate route
+    if request.method == 'POST':
+        role = request.form.get('role')
+        if role == 'customer':
+            return redirect(url_for('login_cust'))
+        elif role == 'booking_agent':
+            return redirect(url_for('login_agent'))
+        elif role == 'airline_staff':
+            return redirect(url_for('login_staff'))
+        else:
+            return "Invalid role selected", 400
+	
+    #if request if GET
+    return render_template('logUser.html')
+
 
 #Define route for login
 @app.route('/login')
 def login():
 	return render_template('login.html')
+
+@app.route('/login_cust')
+def login_cust():
+    return render_template('loginCust.html')
+
+@app.route('/login_agent')
+def login_agent():
+    return render_template('loginAgent.html')
+
+@app.route('/login_staff')
+def login_staff():
+    return render_template('loginStaff.html')
+
+
+
+
+
 
 #Define route for register
 @app.route('/register')
@@ -45,6 +82,7 @@ def register():
 #Authenticates the login
 @app.route('/loginAuth', methods=['GET', 'POST'])
 def loginAuth():
+	conn = get_db_connection()
 	#grabs information from the forms
 	username = request.form['username']
 	password = request.form['password']
