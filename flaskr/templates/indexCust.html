@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        /* Styling for the navigation bar */
+        nav {
+            background-color: rgb(54, 96, 180);
+            color: white;
+            text-align: left;
+            height: 50px;
+            padding-top: 14px;
+            padding-left: 20px;
+            padding-bottom: 10px;
+        }
+
+        a:link {
+            color: rgb(255, 255, 255);
+        }
+
+        a:visited {
+            color: white;
+        }
+
+        a:hover {
+            color: rgb(100, 158, 19);
+        }
+
+        a:active {
+            color: rgb(15, 204, 150);
+        }
+
+        a:link, a:visited {
+            text-decoration: none;
+        }
+
+        /* Centering the table */
+        .table-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        table, th, td {
+            border: 3px solid black;
+            border-collapse: collapse;
+            padding: 8px;
+        }
+
+        * {box-sizing: border-box;}
+        body {font-family: Verdana, sans-serif;}
+        .mySlides {display: none;}
+        img {vertical-align: middle;}
+
+        /* Slideshow container */
+        .slideshow-container {
+        max-width: 1000px;
+        position: relative;
+        margin: auto;
+        }
+
+        .active {
+        background-color: #717171;
+        }
+
+        /* Fading animation */
+        .fade {
+        animation-name: fade;
+        animation-duration: 1.5s;
+        }
+
+        @keyframes fade {
+        from {opacity: .4} 
+        to {opacity: 1}
+        }
+
+        /* On smaller screens, decrease text size */
+        @media only screen and (max-width: 300px) {
+        .text {font-size: 11px}
+        }
+
+        .welcome {
+            text-align: center;
+        }
+
+        .table-title {
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/login">Login</a>
+        <a href="/register">Register</a>
+    </nav>
+
+    <div class="welcome">
+        <h1>Welcome Customer to Airline Reservation System</h1>
+    </div>
+
+    <div class="table-title">
+        <h3>Upcoming Flights</h3>
+    </div>
+
+
+      
+        
+
+    <div class="table-container">
+        <table>
+            <tr>
+                <th>Airline Name</th>
+                <th>Flight Number</th>
+                <th>Departure Time</th>
+                <th>Arrival Time</th>
+                <th>Status</th>
+                <th>Arrival Airport Name</th>
+                <th>Departure Airport Name</th>
+            </tr>
+        
+            {% for line in data %}
+            <tr>
+                <td>{{ line[0] }}</td>
+                <td>{{ line[1] }}</td>
+                <td>{{ line[2] }}</td>
+                <td>{{ line[3] }}</td>
+                <td>{{ line[4] }}</td>
+                <td>{{ line[5] }}</td>
+                <td>{{ line[6] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <tr>
+                <th>Airline Name</th>
+                <th>Flight Number</th>
+                <th>Departure Time</th>
+                <th>Arrival Time</th>
+                <th>Status</th>
+                <th>Arrival Airport Name</th>
+                <th>Departure Airport Name</th>
+
+                {% for line in data1 %}
+                <tr>
+                    <td>{{ line[0] }}</td>
+                    <td>{{ line[1] }}</td>
+                    <td>{{ line[2] }}</td>
+                    <td>{{ line[3] }}</td>
+                    <td>{{ line[4] }}</td>
+                    <td>{{ line[5] }}</td>
+                    <td>{{ line[6] }}</td>
+                </tr>
+                {% endfor %}
+
+            </tr>
+        </table>
+    </div>
+
+    
+</body>
+</html>

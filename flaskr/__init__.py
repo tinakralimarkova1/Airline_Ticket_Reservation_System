@@ -59,8 +59,33 @@ def login():
 
 @app.route('/login_cust')
 def login_cust():
-    return render_template('loginCust.html')
+    if request.method == 'POST':
 
+        #user input 
+        username = request.form['username']
+        password = request.form['password']
+
+        #connect to dp
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        #query and fetching data
+        query = "SELECT Email, Password FROM Customer WHERE Email = %s and Password = %s"
+        cursor.execute(query, (username, password))
+        data = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+
+        #if data is found, username exists 
+        if data:
+            session['username'] = username
+            return redirect(url_for('customer_home'))
+        else:
+            error = 'Invalid login or username'
+            return render_template('login_cust.html', error=error)
+
+    return render_template('loginCust.html')
 @app.route('/login_agent')
 def login_agent():
     return render_template('loginAgent.html')
@@ -69,96 +94,100 @@ def login_agent():
 def login_staff():
     return render_template('loginStaff.html')
 
+#register
 
+@app.route('/register', methods=['GET'])
+def show_register():
+    return render_template('register.html')
 
-
-
-
-#Define route for register
-@app.route('/register')
+@app.route('/regUser')
 def register():
-	return render_template('register.html')
+    if request.method == 'POST':
+          role = request.form.get('role')
+          if role == 'customer':
+              return redirect(url_for('register_customer'))
+          elif role == 'booking_agent':
+              return redirect(url_for('register_agent'))
+          elif role == 'airline_staff':
+              return redirect(url_for('register_staff'))
+          else:
+              return "Invalid role selected", 400
 
-#Authenticates the login
-@app.route('/loginAuth', methods=['GET', 'POST'])
-def loginAuth():
-	conn = get_db_connection()
-	#grabs information from the forms
-	username = request.form['username']
-	password = request.form['password']
+    return render_template('regUser.html')
 
-	#cursor used to send queries
-	cursor = conn.cursor()
-	#executes query
-	query = "SELECT * FROM user WHERE username = '{}' and password = '{}'"
-	cursor.execute(query.format(username, password))
-	#stores the results in a variable
-	data = cursor.fetchone()
-	#use fetchall() if you are expecting more than 1 data row
-	cursor.close()
-	error = None
-	if(data):
-		#creates a session for the the user
-		#session is a built in
-		session['username'] = username
-		return redirect(url_for('home'))
-	else:
-		#returns an error message to the html page
-		error = 'Invalid login or username'
-		return render_template('login.html', error=error)
 
-#Authenticates the register
-@app.route('/registerAuth', methods=['GET', 'POST'])
-def registerAuth():
-	#grabs information from the forms
-	username = request.form['username']
-	password = request.form['password']
+@app.route('/register_customer')
+def register_customer():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        name = request.form.get('name')
+        password = request.form.get('password')
+        building_number = request.form.get('building_number')
+        street = request.form.get('street')
+        city = request.form.get('city')
+        state = request.form.get('state')
+        phone_number = request.form.get('phone_number')
+        passport_number = request.form.get('passport_number')
+        passport_expiration_date = request.form.get('passport_expiration_date')
+        passport_country = request.form.get('passport_country')
+        date_of_birth = request.form.get('date_of_birth')
 
-	#cursor used to send queries
-	cursor = conn.cursor()
-	#executes query
-	query = "SELECT * FROM user WHERE username = '{}'"
-	cursor.execute(query.format(username))
-	#stores the results in a variable
-	data = cursor.fetchone()
-	#use fetchall() if you are expecting more than 1 data row
-	error = None
-	if(data):
-		#If the previous query returns data, then user exists
-		error = "This user already exists"
-		return render_template('register.html', error = error)
-	else:
-		ins = "INSERT INTO user VALUES('{}', '{}')"
-		cursor.execute(ins.format(username, password))
-		conn.commit()
-		cursor.close()
-		return render_template('index.html')
+        if not all([email, name, password, building_number, street, city, state, phone_number, passport_number, passport_expiration_date, passport_country, date_of_birth]):
+            error = "All fields are required"
+            return render_template('registerCust.html', error=error)
+    
 
-@app.route('/home')
-def home():
-    username = session['username']
-    cursor = conn.cursor();
-    query = "SELECT ts, blog_post FROM blog WHERE username = '{}' ORDER BY ts DESC"
-    cursor.execute(query.format(username))
-    data1 = cursor.fetchall() 
-    cursor.close()
-    return render_template('home.html', username=username, posts=data1)
-	
-@app.route('/post', methods=['GET', 'POST'])
-def post():
-	username = session['username']
-	cursor = conn.cursor();
-	blog = request.form['blog']
-	query = "INSERT INTO blog (blog_post, username) VALUES('{}', '{}')"
-	cursor.execute(query.format(blog, username))
-	conn.commit()
-	cursor.close()
-	return redirect(url_for('home'))
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        query = "SELECT email FROM customer WHERE email = %s"
+        cursor.execute(query, (email,))
+        data = cursor.fetchone()
+
+        if data:
+            error = "This email is already in use"
+            return render_template('registerCust.html', error=error)
+        else:
+            # Insert the new customer record
+            query = """INSERT INTO Customer (email, password, building_number, street, city, state, name) 
+                       VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+            cursor.execute(query, (email, name, password, building_number, street, city, state, phone_number, passport_number, passport_expiration_date, passport_country, date_of_birth))
+            conn.commit()
+            cursor.close()
+            conn.close()
+
+            return redirect(url_for('loginCust.html'))  
+
+
+
+
+    return render_template('registerCust.html')
+
+@app.route('/register_agent')
+def register_agent():
+    return render_template('registerAgent.html')
+
+#customer 
+
+@app.route('/customer_home')
+def customer_home():
+    return render_template('indexCust.html')
+
+
+#logout
 
 @app.route('/logout')
 def logout():
-	session.pop('username')
-	return redirect('/')
+    
+    session.pop('username')
+    return redirect('/')
+
+
+
+
+
+
 	
 app.secret_key = 'some key that you will never guess'
 #Run the app on localhost port 5000

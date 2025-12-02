@@ -1,0 +1,24 @@
+<!-- register selection page -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Select Role</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/login">Login</a>
+        <a href="/register">Register</a>
+    </nav>
+
+    <div class="selection">
+        <h1>Select Your Role for Registration</h1>
+        <form action="/regUser" method="POST">
+            <button type="submit" name="role" value="customer">Customer</button>
+            <button type="submit" name="role" value="booking_agent">Booking Agent</button>
+            <button type="submit" name="role" value="airline_staff">Airline Staff</button>
+        </form>
+    </div>
+</body>
+</html>
