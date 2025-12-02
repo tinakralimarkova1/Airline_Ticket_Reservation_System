@@ -100,7 +100,7 @@ def login_staff():
 def show_register():
     return render_template('register.html')
 
-@app.route('/regUser')
+@app.route('/regUser', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
           role = request.form.get('role')
@@ -113,10 +113,10 @@ def register():
           else:
               return "Invalid role selected", 400
 
-    return render_template('regUser.html')
+    return render_template('register.html')
 
 
-@app.route('/register_customer')
+@app.route('/register_customer', methods=['GET', 'POST'])
 def register_customer():
     if request.method == 'POST':
         email = request.form.get('email')
@@ -150,14 +150,14 @@ def register_customer():
             return render_template('registerCust.html', error=error)
         else:
             # Insert the new customer record
-            query = """INSERT INTO Customer (email, password, building_number, street, city, state, name) 
-                       VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+            query = """INSERT INTO customer (email,name,password, building_number, street, city, state, phone_number, passport_number, passport_expiration_date, passport_country, date_of_birth) 
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
             cursor.execute(query, (email, name, password, building_number, street, city, state, phone_number, passport_number, passport_expiration_date, passport_country, date_of_birth))
             conn.commit()
             cursor.close()
             conn.close()
 
-            return redirect(url_for('loginCust.html'))  
+            return redirect(url_for('login_cust'))  
 
 
 
