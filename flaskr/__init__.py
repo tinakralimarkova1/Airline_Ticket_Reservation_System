@@ -70,7 +70,7 @@ def login_cust():
         cursor = conn.cursor()
 
         #query and fetching data
-        query = "SELECT email, password FROM Customer WHERE email = %s and password = %s"
+        query = "SELECT email, password FROM Customer WHERE email = %s and password = SHA2(%s, 256)"
         cursor.execute(query, (username, password))
         data = cursor.fetchone()
         cursor.close()
@@ -99,7 +99,7 @@ def login_agent():
         cursor = conn.cursor()
 
         #query and fetching data
-        query = "SELECT email, password FROM booking_agent WHERE email = %s and password = %s"
+        query = "SELECT email, password FROM booking_agent WHERE email = %s and password = SHA2(%s, 256)"
         cursor.execute(query, (username, password))
         data = cursor.fetchone()
         cursor.close()
@@ -128,7 +128,7 @@ def login_staff():
         cursor = conn.cursor()
 
         #query and fetching data
-        query = "SELECT username, password FROM airline_staff WHERE username = %s and password = %s"
+        query = "SELECT username, password FROM airline_staff WHERE username = %s and password = SHA2(%s, 256)"
         cursor.execute(query, (username, password))
         data = cursor.fetchone()
         cursor.close()
@@ -201,7 +201,7 @@ def register_customer():
         else:
             # Insert the new customer record
             query = """INSERT INTO customer (email,name,password, building_number, street, city, state, phone_number, passport_number, passport_expiration_date, passport_country, date_of_birth) 
-                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+                       VALUES (%s, %s, SHA2(%s, 256), %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
             cursor.execute(query, (email, name, password, building_number, street, city, state, phone_number, passport_number, passport_expiration_date, passport_country, date_of_birth))
             conn.commit()
             cursor.close()
@@ -241,7 +241,7 @@ def register_agent():
         else:
             # Insert the new customer record
             query = """INSERT INTO booking_agent (email,password) 
-                       VALUES (%s, %s)"""
+                       VALUES (%s, SHA2(%s, 256))"""
             cursor.execute(query, (email, password))
             conn.commit()
             cursor.close()
@@ -280,7 +280,7 @@ def register_staff():
         else:
             # Insert the new customer record
             query = """INSERT INTO airline_staff (username,password, first_name, last_name, date_of_birth) 
-                       VALUES (%s, %s, %s, %s, %s)"""
+                       VALUES (%s, SHA2(%s, 256), %s, %s, %s)"""
             cursor.execute(query, (username, password, first_name, last_name, date_of_birth))
             conn.commit()
             cursor.close()
