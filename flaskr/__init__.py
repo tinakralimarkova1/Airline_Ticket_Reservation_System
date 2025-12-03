@@ -214,8 +214,40 @@ def register_customer():
 
     return render_template('registerCust.html')
 
-@app.route('/register_agent')
+@app.route('/register_agent', methods=['GET', 'POST'])
 def register_agent():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        
+
+
+        if not all([email, password]):
+            error = "All fields are required"
+            return render_template('registerAgent.html', error=error)
+    
+
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        query = "SELECT email FROM booking_agent WHERE email = %s"
+        cursor.execute(query, (email,))
+        data = cursor.fetchone()
+
+        if data:
+            error = "This email is already in use"
+            return render_template('registerAgent.html', error=error)
+        else:
+            # Insert the new customer record
+            query = """INSERT INTO booking_agent (email,password) 
+                       VALUES (%s, %s)"""
+            cursor.execute(query, (email, password))
+            conn.commit()
+            cursor.close()
+            conn.close()
+
+            return redirect(url_for('login_agent'))
     return render_template('registerAgent.html')
 
 
