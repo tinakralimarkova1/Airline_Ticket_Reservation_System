@@ -373,12 +373,87 @@ def register_staff():
 
 #customer 
 
-@app.route('/customer_home')
+@app.route('/customer_home', methods=['GET'])
 def customer_home():
-    
+    if 'username' not in session:
+        return redirect(url_for('login_cust'))
+
+    origin = request.args.get('origin', '').strip()
+    destination = request.args.get('destination', '').strip()
+    date = request.args.get('date', '').strip()
+    time = request.args.get('time', '').strip()
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    query = """
+        SELECT
+            operated_by,      -- 0: Airline Name
+            flight_num,       -- 1: Flight Number
+            departure_date,   -- 2: Departure Date
+            departure_time,   -- 3: Departure Time
+            arrival_date,     -- 4: Arrival Date
+            arrival_time,     -- 5: Arrival Time
+            status_,          -- 6: Status
+            arrives,          -- 7: Arrival Airport Code
+            departs           -- 8: Departure Airport Code
+        FROM flight AS f
+        LEFT JOIN airport AS dep_airport
+            ON f.departs = dep_airport.name
+        LEFT JOIN airport AS arr_airport
+            ON f.arrives = arr_airport.name
+        WHERE
+            f.status_ = 'upcoming'
+    """
+    params = []
+
+    if origin:
+        query += " AND (f.departs LIKE %s OR dep_airport.host LIKE %s)"
+        like_origin = f"%{origin}%"
+        params.extend([like_origin, like_origin])
+
+    if destination:
+        query += " AND (f.arrives LIKE %s OR arr_airport.host LIKE %s)"
+        like_dest = f"%{destination}%"
+        params.extend([like_dest, like_dest])
+
+    if date:
+        query += " AND f.departure_date = %s"
+        params.append(date)
+
+    if time:
+        query += " AND f.departure_time >= %s"
+        params.append(time)
+
+    cursor.execute(query, tuple(params))
+    data = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'indexCust.html',
+        name=session.get('name'),
+        data=data
+    )
+
+@app.route('/buyCust', methods=['GET'])
+def buy_cust():
+    # Later you can read the selected flight number:
+    # flight_num = request.args.get('flight_num')
+    return render_template('buyCust.html')
+
+@app.route('/spendingCust', methods=['GET'])
+def customer_spending():
+    # Later: query DB for this customer's spending
+    return render_template('spendingCust.html')
+
+@app.route('/purchasesCust', methods=['GET'])
+def customer_purchases():
+    # Later: query DB for this customer's purchased flights
+    return render_template('purchasedCust.html')
 
 
-    return render_template('indexCust.html', custName=session['name'])
 
 
 #booking agent
