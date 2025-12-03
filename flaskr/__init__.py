@@ -21,6 +21,10 @@ def index():
     date = request.args.get('date', '').strip()
     time = request.args.get('time', '').strip()
 
+    # fields for status lookup
+    status_airline = request.args.get('status_airline', '').strip()
+    status_flight = request.args.get('status_flight', '').strip()
+
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -71,10 +75,42 @@ def index():
     cursor.execute(query, tuple(params))
     data = cursor.fetchall()
 
+
+    query2 = """
+        SELECT
+            operated_by,      -- 0: Airline Name
+            flight_num,       -- 1: Flight Number
+            departure_date,   -- 2: Departure Date
+            departure_time,   -- 3: Departure Time
+            arrival_date,     -- 4: Arrival Date
+            arrival_time,     -- 5: Arrival Time
+            status_,          -- 6: Status
+            arrives,          -- 7: Arrival Airport Code
+            departs           -- 8: Departure Airport Code
+        FROM flight AS f
+        WHERE
+            f.status_ = 'in_progress'
+        """
+    
+    status_params = []
+    
+    if status_airline:
+        query2 += " AND f.operated_by = %s"
+        status_params.append(status_airline)
+
+    if status_flight:
+        query2 += " AND f.flight_num = %s"
+        status_params.append(status_flight)
+
+    cursor.execute(query2, tuple(status_params))
+    data1 = cursor.fetchall()
+
+    
+
     cursor.close()
     conn.close()
 
-    return render_template('index.html', data=data)
+    return render_template('index.html', data=data, data1=data1)
 
 
 
@@ -114,7 +150,7 @@ def login_cust():
         cursor = conn.cursor()
 
         #query and fetching data
-        query = "SELECT email, password FROM Customer WHERE email = %s and password = SHA2(%s, 256)"
+        query = "SELECT name, email, password FROM Customer WHERE email = %s and password = SHA2(%s, 256)"
         cursor.execute(query, (username, password))
         data = cursor.fetchone()
         cursor.close()
@@ -124,10 +160,11 @@ def login_cust():
         #if data is found, username exists 
         if data:
             session['username'] = username
+            session['name'] = data[0]
             return redirect(url_for('customer_home'))
         else:
             error = 'Invalid login or username'
-            return render_template('login_cust.html', error=error)
+            return render_template('loginCust.html', error=error)
 
     return render_template('loginCust.html')
 @app.route('/login_agent', methods=['GET', 'POST'])
@@ -336,15 +373,145 @@ def register_staff():
 
 #customer 
 
-@app.route('/customer_home')
+@app.route('/customer_home', methods=['GET'])
 def customer_home():
-    return render_template('indexCust.html')
+    if 'username' not in session:
+        return redirect(url_for('login_cust'))
+
+    origin = request.args.get('origin', '').strip()
+    destination = request.args.get('destination', '').strip()
+    date = request.args.get('date', '').strip()
+    time = request.args.get('time', '').strip()
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    query = """
+        SELECT
+            operated_by,      -- 0: Airline Name
+            flight_num,       -- 1: Flight Number
+            departure_date,   -- 2: Departure Date
+            departure_time,   -- 3: Departure Time
+            arrival_date,     -- 4: Arrival Date
+            arrival_time,     -- 5: Arrival Time
+            status_,          -- 6: Status
+            arrives,          -- 7: Arrival Airport Code
+            departs           -- 8: Departure Airport Code
+        FROM flight AS f
+        LEFT JOIN airport AS dep_airport
+            ON f.departs = dep_airport.name
+        LEFT JOIN airport AS arr_airport
+            ON f.arrives = arr_airport.name
+        WHERE
+            f.status_ = 'upcoming'
+    """
+    params = []
+
+    if origin:
+        query += " AND (f.departs LIKE %s OR dep_airport.host LIKE %s)"
+        like_origin = f"%{origin}%"
+        params.extend([like_origin, like_origin])
+
+    if destination:
+        query += " AND (f.arrives LIKE %s OR arr_airport.host LIKE %s)"
+        like_dest = f"%{destination}%"
+        params.extend([like_dest, like_dest])
+
+    if date:
+        query += " AND f.departure_date = %s"
+        params.append(date)
+
+    if time:
+        query += " AND f.departure_time >= %s"
+        params.append(time)
+
+    cursor.execute(query, tuple(params))
+    data = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'indexCust.html',
+        name=session.get('name'),
+        data=data
+    )
+
+@app.route('/buy_cust', methods=['GET', 'POST'])
+def buy_cust():
+    # Must be logged in
+    if 'username' not in session:
+        return redirect(url_for('login_cust'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)   # dictionary=True gives column names
+
+    # ---------------------------------
+    # GET → Show the purchase page
+    # ---------------------------------
+    if request.method == 'GET':
+        flight_num = request.args.get('flight_num')
+
+        # Fetch flight details
+        query = """
+            SELECT *
+            FROM flight
+            WHERE flight_num = %s
+        """
+        cursor.execute(query, (flight_num,))
+        flight = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        return render_template("buyCust.html", 
+                               flight=flight,
+                               customer_email=session['username'])
+
+    # ---------------------------------
+    # POST → Insert purchase into table
+    # ---------------------------------
+    if request.method == 'POST':
+        customer_email = session['username']
+        agent_email = request.form.get('agent_email') or None
+        ticket_id = request.form.get('ticket_id')
+        purchase_date = request.form.get('purchase_date')
+        flight_num = request.form.get('flight_num')
+
+        # Insert into purchases
+        insert_query = """
+            INSERT INTO purchases (customer_email, booking_agent_email, ticket_id, date)
+            VALUES (%s, %s, %s, %s)
+        """
+        cursor.execute(insert_query, 
+                       (customer_email, agent_email, ticket_id, purchase_date))
+        conn.commit()
+
+        cursor.close()
+        conn.close()
+
+        return redirect(url_for('customer_home'))
+
+
+@app.route('/spendingCust', methods=['GET'])
+def customer_spending():
+    # Later: query DB for this customer's spending
+    return render_template('spendingCust.html')
+
+@app.route('/purchasesCust', methods=['GET'])
+def customer_purchases():
+    # Later: query DB for this customer's purchased flights
+    return render_template('purchasedCust.html')
+
+
 
 
 #booking agent
 
 @app.route('/agent_home')
 def agent_home():
+    
+    
     return render_template('indexAgent.html')
 
 #airline staff

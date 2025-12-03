@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav {
+            background-color: rgb(54, 96, 180);
+            color: white;
+            height: 50px;
+            padding: 14px 20px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            background: white;
+            margin: 40px auto;
+            padding: 30px;
+            border-radius: 8px;
+            border: 2px solid #ccc;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .flight-info {
+            padding: 15px;
+            border: 1px solid #999;
+            border-radius: 6px;
+            background-color: #eef2ff;
+            margin-bottom: 25px;
+        }
+
+        .flight-info p {
+            margin: 6px 0;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        input[type="text"], input[type="email"], input[type="number"], input[type="date"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 6px;
+            border-radius: 4px;
+            border: 1px solid #aaa;
+        }
+
+        button {
+            margin-top: 25px;
+            width: 100%;
+            padding: 12px;
+            background-color: rgb(54, 96, 180);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: rgb(40, 70, 150);
+        }
+
+        .note {
+            font-size: 13px;
+            color: #666;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="/customer_home">Home</a>
+        <a href="/logout">Logout</a>
+    </nav>
+
+    <div class="container">
+        <h2>Purchase Flight</h2>
+
+        <!-- Flight Information -->
+        <div>
+            <h3>Flight Details</h3>
+            <p><strong>Airline:</strong> {{ flight.operated_by }}</p>
+            <p><strong>Flight Number:</strong> {{ flight.flight_num }}</p>
+            <p><strong>Departure:</strong> {{ flight.departs }} at {{ flight.departure_time }} ({{ flight.departure_date }})</p>
+            <p><strong>Arrival:</strong> {{ flight.arrives }} at {{ flight.arrival_time }} ({{ flight.arrival_date }})</p>
+            <p><strong>Status:</strong> {{ flight.status_ }}</p>
+            <p><strong>Price:</strong> ${{ flight.price }}</p>
+        </div>
+
+        <form action="/buy_cust" method="POST">
+            <!-- which flight are we buying? -->
+            <input type="hidden" name="flight_num" value="{{ flight.flight_num }}">
+            <button type="submit">Purchase Flight</button>
+        </form>
+
+    </div>
+
+</body>
+</html>
