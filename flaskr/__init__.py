@@ -437,11 +437,61 @@ def customer_home():
         data=data
     )
 
-@app.route('/buyCust', methods=['GET'])
+@app.route('/buy_cust', methods=['GET', 'POST'])
 def buy_cust():
-    # Later you can read the selected flight number:
-    # flight_num = request.args.get('flight_num')
-    return render_template('buyCust.html')
+    # Must be logged in
+    if 'username' not in session:
+        return redirect(url_for('login_cust'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)   # dictionary=True gives column names
+
+    # ---------------------------------
+    # GET → Show the purchase page
+    # ---------------------------------
+    if request.method == 'GET':
+        flight_num = request.args.get('flight_num')
+
+        # Fetch flight details
+        query = """
+            SELECT *
+            FROM flight
+            WHERE flight_num = %s
+        """
+        cursor.execute(query, (flight_num,))
+        flight = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        return render_template("buyCust.html", 
+                               flight=flight,
+                               customer_email=session['username'])
+
+    # ---------------------------------
+    # POST → Insert purchase into table
+    # ---------------------------------
+    if request.method == 'POST':
+        customer_email = session['username']
+        agent_email = request.form.get('agent_email') or None
+        ticket_id = request.form.get('ticket_id')
+        purchase_date = request.form.get('purchase_date')
+        flight_num = request.form.get('flight_num')
+
+        # Insert into purchases
+        insert_query = """
+            INSERT INTO purchases (customer_email, booking_agent_email, ticket_id, date)
+            VALUES (%s, %s, %s, %s)
+        """
+        cursor.execute(insert_query, 
+                       (customer_email, agent_email, ticket_id, purchase_date))
+        conn.commit()
+
+        cursor.close()
+        conn.close()
+
+        return redirect(url_for('customer_home'))
+
 
 @app.route('/spendingCust', methods=['GET'])
 def customer_spending():
