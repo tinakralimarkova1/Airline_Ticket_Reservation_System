@@ -150,7 +150,7 @@ def login_cust():
         cursor = conn.cursor()
 
         #query and fetching data
-        query = "SELECT email, password FROM Customer WHERE email = %s and password = SHA2(%s, 256)"
+        query = "SELECT name, email, password FROM Customer WHERE email = %s and password = SHA2(%s, 256)"
         cursor.execute(query, (username, password))
         data = cursor.fetchone()
         cursor.close()
@@ -160,10 +160,11 @@ def login_cust():
         #if data is found, username exists 
         if data:
             session['username'] = username
+            session['name'] = data[0]
             return redirect(url_for('customer_home'))
         else:
             error = 'Invalid login or username'
-            return render_template('login_cust.html', error=error)
+            return render_template('loginCust.html', error=error)
 
     return render_template('loginCust.html')
 @app.route('/login_agent', methods=['GET', 'POST'])
@@ -374,13 +375,18 @@ def register_staff():
 
 @app.route('/customer_home')
 def customer_home():
-    return render_template('indexCust.html')
+    
+
+
+    return render_template('indexCust.html', custName=session['name'])
 
 
 #booking agent
 
 @app.route('/agent_home')
 def agent_home():
+    
+    
     return render_template('indexAgent.html')
 
 #airline staff
