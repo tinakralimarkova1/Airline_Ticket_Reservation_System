@@ -85,7 +85,10 @@
 
         .table-title {
             text-align: center;
+            margin-top: 70px;   /* <-- add this */
         }
+
+        
 
     </style>
 </head>
@@ -101,7 +104,7 @@
     </div>
 
     <div class="table-title">
-        <h3>Upcoming Flights</h3>
+        <h2>Upcoming Flights</h2>
     </div>
     
     <!-- 🔍 Flight Search Form -->
@@ -160,6 +163,59 @@
             {% endfor %}
         </table>
     </div>
+
+    <div class="table-title">
+        <h2>In Progress Flights</h2>
+    </div>
+
+    <div class="table-container" style="margin-bottom: 20px;">
+        <form action="/" method="GET">
+            <label>
+                Airline Name:
+                <input type="text" name="status_airline" placeholder="e.g. United or Delta">
+            </label>
+    
+            <label>
+                Flight Number:
+                <input type="text" name="status_flight" placeholder="e.g. 2001 or 5004">
+            </label>
+    
+            <button type="submit">Search</button>
+        </form>
+    </div>
+
+   
+
+    <div class="table-container">
+        <table>
+            <tr>
+                <th>Airline Name</th>
+                <th>Flight Number</th>
+                <th>Departure Date</th>
+                <th>Departure Time</th>
+                <th>Arrival Date</th>
+                <th>Arrival Time</th>
+                <th>Status</th>
+                <th>Arrival Airport Name</th>
+                <th>Departure Airport Name</th>
+            </tr>
+        
+            {% for line in data1 %}
+            <tr>
+                <td>{{ line[0] }}</td>
+                <td>{{ line[1] }}</td>
+                <td>{{ line[2] }}</td>
+                <td>{{ line[3] }}</td>
+                <td>{{ line[4] }}</td>
+                <td>{{ line[5] }}</td>
+                <td>{{ line[6] }}</td>
+                <td>{{ line[7] }}</td>
+                <td>{{ line[8] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
 
     
 </body>

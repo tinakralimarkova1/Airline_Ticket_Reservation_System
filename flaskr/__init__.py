@@ -21,6 +21,10 @@ def index():
     date = request.args.get('date', '').strip()
     time = request.args.get('time', '').strip()
 
+    # fields for status lookup
+    status_airline = request.args.get('status_airline', '').strip()
+    status_flight = request.args.get('status_flight', '').strip()
+
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -71,10 +75,42 @@ def index():
     cursor.execute(query, tuple(params))
     data = cursor.fetchall()
 
+
+    query2 = """
+        SELECT
+            operated_by,      -- 0: Airline Name
+            flight_num,       -- 1: Flight Number
+            departure_date,   -- 2: Departure Date
+            departure_time,   -- 3: Departure Time
+            arrival_date,     -- 4: Arrival Date
+            arrival_time,     -- 5: Arrival Time
+            status_,          -- 6: Status
+            arrives,          -- 7: Arrival Airport Code
+            departs           -- 8: Departure Airport Code
+        FROM flight AS f
+        WHERE
+            f.status_ = 'in_progress'
+        """
+    
+    status_params = []
+    
+    if status_airline:
+        query2 += " AND f.operated_by = %s"
+        status_params.append(status_airline)
+
+    if status_flight:
+        query2 += " AND f.flight_num = %s"
+        status_params.append(status_flight)
+
+    cursor.execute(query2, tuple(status_params))
+    data1 = cursor.fetchall()
+
+    
+
     cursor.close()
     conn.close()
 
-    return render_template('index.html', data=data)
+    return render_template('index.html', data=data, data1=data1)
 
 
 
