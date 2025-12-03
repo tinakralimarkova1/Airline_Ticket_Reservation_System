@@ -57,7 +57,7 @@ def select_role():
 def login():
 	return render_template('login.html')
 
-@app.route('/login_cust')
+@app.route('/login_cust', methods=['GET', 'POST'])
 def login_cust():
     if request.method == 'POST':
 
