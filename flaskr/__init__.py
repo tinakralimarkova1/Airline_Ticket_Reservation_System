@@ -12,6 +12,12 @@ def get_db_connection():
         password='',
         database='Airline_Reservation_System')
 
+## helper function for routes that are only available to agents 
+def require_agent(): 
+    if session.get('user_type') != 'agent': 
+        # redirect if not an agent to 
+        return redirect(url_for('login_agent'))
+    return None 
 
 #Define a route to hello function
 @app.route('/')
@@ -303,14 +309,7 @@ def customer_home():
 
 ######## booking agent pages ##########
 
-## 1. helper function for routes that are only available to agents 
-def require_agent(): 
-    if session.get('user_type') != 'agent': 
-        # redirect if not an agent to 
-        return redirect(url_for('login_agent'))
-    return None 
-
-## 2. agent home page 
+## 1. agent home page 
 @app.route('/agent_home')
 def agent_home():
     # only accessable if logged in as an agent already 
@@ -320,7 +319,7 @@ def agent_home():
     
     return render_template('indexAgent.html')
 
-# 3. show flights that booking agent has prchased for a customer
+# 2. show flights that booking agent has prchased for a customer
 @app.route('/agent/flights')
 def agent_flights():
     redirect_or_none = require_agent()
@@ -348,7 +347,7 @@ def agent_flights():
 
     return render_template('agentFlights.html')
 
-# 4. search for flights and purchase tickets for customers 
+# 3. search for flights and purchase tickets for customers 
 @app.route('/agent/search')
 def agent_search():
     
@@ -359,7 +358,7 @@ def agent_search():
     return render_template('agentSearch.html')  
 
 
-# 5. access analytics 
+# 4. access analytics 
 @app.route('/agent/analytics')
 def agent_analytics(): 
     
