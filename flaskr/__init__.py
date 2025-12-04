@@ -313,7 +313,7 @@ def customer_home():
 @app.route('/agent_home')
 def agent_home():
     # only accessable if logged in as an agent already 
-    redirect_or_none = require_agent
+    redirect_or_none = require_agent()
     if redirect_or_none:
         return redirect_or_none
     
@@ -345,7 +345,7 @@ def agent_flights():
     cursor.close()
     conn.close() 
 
-    return render_template('agentFlights.html')
+    return render_template('agentFlights.html', flights=flights)
 
 # 3. search for flights and purchase tickets for customers 
 @app.route('/agent/search')
@@ -379,14 +379,8 @@ def staff_home():
 
 @app.route('/logout')
 def logout():
-    
     session.pop('username')
     return redirect('/')
-
-
-
-
-
 
 	
 app.secret_key = 'some key that you will never guess'
