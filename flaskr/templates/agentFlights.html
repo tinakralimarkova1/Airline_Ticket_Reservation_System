@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flights Sold by You</title>
+</head>
+<body>
+
+    <!-- Page Title -->
+    <h1>Flights You Sold</h1>
+
+    <!-- If flights is empty, show message -->
+    {% if flights|length == 0 %}
+        <p>You have not sold any tickets yet.</p>
+    {% else %}
+
+    <!-- Table of flights -->
+    <table border="1" cellpadding="5" cellspacing="0">
+        <tr>
+            <th>Airline</th>
+            <th>Flight #</th>
+            <th>Origin</th>
+            <th>Destination</th>
+            <th>Departure</th>
+            <th>Arrival</th>
+            <th>Customer Email</th>
+            <th>Price</th>
+            <th>Purchase Date</th>
+        </tr>
+
+        <!-- Loop through all flights passed from Flask -->
+        {% for f in flights %}
+        <tr>
+            <!-- NOTE: f.x must match your SELECT column names -->
+
+            <td>{{ f.flight_num }}</td>
+            <td>{{ f.airline_name }}</td>
+            <td>{{ f.departs }}</td>
+            <td>{{ f.departure_date }}</td>
+            <td>{{ f.departure_time }}</td>
+            <td>{{ f.arrives }}</td>
+            <td>{{ f.arrival_date }}</td>
+            <td>{{ f.arrival_time }}</td>
+            <td>{{ f.price }}</td>
+            <td>{{ f.status_ }}</td>        
+            <td>{{ f.airplane_id }}</td>  
+            <td>{{ f.customer_email }}</td>
+            <td>{{ f.date }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    {% endif %}
+
+    <br>
+    <!-- Link back to agent home page -->
+    <a href="{{ url_for('agent_home') }}">Back to Agent Home</a>
+
+</body>
+</html>

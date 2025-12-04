@@ -48,11 +48,11 @@ def select_role():
         else:
             return "Invalid role selected", 400
 	
-    #if request if GET
+    #if request is GET
     return render_template('logUser.html')
 
 
-#Define route for login
+#Define routes for login
 @app.route('/login')
 def login():
 	return render_template('login.html')
@@ -80,6 +80,7 @@ def login_cust():
         #if data is found, username exists 
         if data:
             session['username'] = username
+            session['user_type'] = 'customer'
             return redirect(url_for('customer_home'))
         else:
             error = 'Invalid login or username'
@@ -105,14 +106,16 @@ def login_agent():
         cursor.close()
         conn.close()
 
-
         #if data is found, username exists 
         if data:
             session['username'] = username
+            session['user_type'] = 'agent'
+            session['agent_email'] = username # for agent pages 
             return redirect(url_for('agent_home'))
         else:
             error = 'Invalid login or username'
             return render_template('login_agent.html', error=error)
+    
     return render_template('loginAgent.html')
 
 @app.route('/login_staff', methods=['GET', 'POST'])
@@ -138,13 +141,14 @@ def login_staff():
         #if data is found, username exists 
         if data:
             session['username'] = username
+            session['user_type'] = 'staff'
             return redirect(url_for('staff_home'))
         else:
             error = 'Invalid login or username'
             return render_template('loginStaff.html', error=error)
     return render_template('loginStaff.html')
 
-#register
+#Register routes 
 
 @app.route('/register', methods=['GET'])
 def show_register():
@@ -216,30 +220,30 @@ def register_customer():
 
 @app.route('/register_agent', methods=['GET', 'POST'])
 def register_agent():
+    
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
         
-
-
         if not all([email, password]):
             error = "All fields are required"
             return render_template('registerAgent.html', error=error)
     
-
-
         conn = get_db_connection()
         cursor = conn.cursor()
 
+        # check if email already exists 
         query = "SELECT email FROM booking_agent WHERE email = %s"
         cursor.execute(query, (email,))
         data = cursor.fetchone()
 
         if data:
             error = "This email is already in use"
+            cursor.close()
+            conn.close() 
             return render_template('registerAgent.html', error=error)
         else:
-            # Insert the new customer record
+            # insert new agent record 
             query = """INSERT INTO booking_agent (email,password) 
                        VALUES (%s, %s)"""
             cursor.execute(query, (email, password))
@@ -297,11 +301,73 @@ def customer_home():
     return render_template('indexCust.html')
 
 
-#booking agent
+######## booking agent pages ##########
 
+## 1. helper function for routes that are only available to agents 
+def require_agent(): 
+    if session.get('user_type') != 'agent': 
+        # redirect if not an agent to 
+        return redirect(url_for('login_agent'))
+    return None 
+
+## 2. agent home page 
 @app.route('/agent_home')
 def agent_home():
+    # only accessable if logged in as an agent already 
+    redirect_or_none = require_agent
+    if redirect_or_none:
+        return redirect_or_none
+    
     return render_template('indexAgent.html')
+
+# 3. show flights that booking agent has prchased for a customer
+@app.route('/agent/flights')
+def agent_flights():
+    redirect_or_none = require_agent()
+    if redirect_or_none: 
+        return redirect_or_none 
+    
+    agent_email = session.get('agent_email')
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+        SELECT f.flight_num, f.operated_by AS airline_name, f.departs, f.departure_date, 
+               f.departure_time, f.arrives, f.arrival_date, f.arrival_time, f.price, f.status_, 
+               f.use_ AS airplane_id, p.customer_email, p.date
+        FROM flight as f, ticket as t, purchases as p 
+        WHERE p.booking_agent_email = %s AND p.ticket_id = t.ticket_id AND t.for_= f.flight_num 
+        ORDER BY p.date DESC 
+    """
+
+    cursor.execute(query, (agent_email,))
+    flights = cursor.fetchall()
+
+    cursor.close()
+    conn.close() 
+
+    return render_template('agentFlights.html')
+
+# 4. search for flights and purchase tickets for customers 
+@app.route('/agent/search')
+def agent_search():
+    
+    redirect_or_none = require_agent()
+    if redirect_or_none:
+        return redirect_or_none
+
+    return render_template('agentSearch.html')  
+
+
+# 5. access analytics 
+@app.route('/agent/analytics')
+def agent_analytics(): 
+    
+    redirect_or_none = require_agent()
+    if redirect_or_none:
+        return redirect_or_none
+
+    return render_template('agentAnalytics.html')  
 
 #airline staff
 
