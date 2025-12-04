@@ -320,7 +320,7 @@ def agent_home():
     return render_template('indexAgent.html')
 
 # 2. show flights that booking agent has prchased for a customer
-@app.route('/agent/flights')
+@app.route('/agent_flights')
 def agent_flights():
     redirect_or_none = require_agent()
     if redirect_or_none: 
@@ -348,7 +348,7 @@ def agent_flights():
     return render_template('agentFlights.html', flights=flights)
 
 # 3. search for flights and purchase tickets for customers 
-@app.route('/agent/search')
+@app.route('/agent_search')
 def agent_search():
     
     redirect_or_none = require_agent()
@@ -359,7 +359,7 @@ def agent_search():
 
 
 # 4. access analytics 
-@app.route('/agent/analytics')
+@app.route('/agent_analytics')
 def agent_analytics(): 
     
     redirect_or_none = require_agent()
