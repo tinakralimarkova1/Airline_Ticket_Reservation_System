@@ -372,7 +372,6 @@ def register_staff():
     return render_template('registerStaff.html')
 
 #customer 
-
 @app.route('/customer_home', methods=['GET'])
 def customer_home():
     if 'username' not in session:
@@ -387,24 +386,39 @@ def customer_home():
     cursor = conn.cursor()
 
     query = """
+    SELECT
+        f.operated_by,          -- 0: Airline Name
+        f.flight_num,           -- 1: Flight Number
+        f.departure_date,       -- 2: Departure Date
+        f.departure_time,       -- 3: Departure Time
+        f.arrival_date,         -- 4: Arrival Date
+        f.arrival_time,         -- 5: Arrival Time
+        f.status_,              -- 6: Status
+        f.arrives,              -- 7: Arrival Airport Code
+        f.departs,              -- 8: Departure Airport Code
+        avail.available_tickets -- 9: # of tickets left
+    FROM flight AS f
+    -- join with airports for city search
+    LEFT JOIN airport AS dep_airport
+        ON f.departs = dep_airport.name
+    LEFT JOIN airport AS arr_airport
+        ON f.arrives = arr_airport.name
+    -- subquery: count available tickets per flight
+    JOIN (
         SELECT
-            operated_by,      -- 0: Airline Name
-            flight_num,       -- 1: Flight Number
-            departure_date,   -- 2: Departure Date
-            departure_time,   -- 3: Departure Time
-            arrival_date,     -- 4: Arrival Date
-            arrival_time,     -- 5: Arrival Time
-            status_,          -- 6: Status
-            arrives,          -- 7: Arrival Airport Code
-            departs           -- 8: Departure Airport Code
-        FROM flight AS f
-        LEFT JOIN airport AS dep_airport
-            ON f.departs = dep_airport.name
-        LEFT JOIN airport AS arr_airport
-            ON f.arrives = arr_airport.name
-        WHERE
-            f.status_ = 'upcoming'
-    """
+            t.for_ AS flight_num,        -- ✅ this links tickets to flights
+            COUNT(*) AS available_tickets
+        FROM ticket AS t
+        LEFT JOIN purchases AS p
+            ON t.ticket_id = p.ticket_id
+        WHERE p.ticket_id IS NULL        -- only tickets not purchased
+        GROUP BY t.for_
+    ) AS avail
+        ON avail.flight_num = f.flight_num
+    WHERE
+        f.status_ = 'upcoming'
+"""
+
     params = []
 
     if origin:
@@ -437,6 +451,7 @@ def customer_home():
         data=data
     )
 
+
 @app.route('/buy_cust', methods=['GET', 'POST'])
 def buy_cust():
     # Must be logged in
@@ -452,7 +467,6 @@ def buy_cust():
     if request.method == 'GET':
         flight_num = request.args.get('flight_num')
 
-        # Fetch flight details
         query = """
             SELECT *
             FROM flight
@@ -464,44 +478,158 @@ def buy_cust():
         cursor.close()
         conn.close()
 
-        return render_template("buyCust.html", 
-                               flight=flight,
-                               customer_email=session['username'])
+        if not flight:
+            return "Flight not found", 404
+
+        return render_template(
+            "buyCust.html",
+            flight=flight,
+            customer_email=session['username']
+        )
 
     # ---------------------------------
-    # POST → Insert purchase into table
+    # POST → Actually buy the ticket
     # ---------------------------------
     if request.method == 'POST':
         customer_email = session['username']
+        # If you later support agents, you can pass this in the form; for now None
         agent_email = request.form.get('agent_email') or None
-        ticket_id = request.form.get('ticket_id')
-        purchase_date = request.form.get('purchase_date')
         flight_num = request.form.get('flight_num')
 
-        # Insert into purchases
-        insert_query = """
-            INSERT INTO purchases (customer_email, booking_agent_email, ticket_id, date)
-            VALUES (%s, %s, %s, %s)
-        """
-        cursor.execute(insert_query, 
-                       (customer_email, agent_email, ticket_id, purchase_date))
-        conn.commit()
+        # 1) Find an available ticket for this flight
+        cursor = conn.cursor()  # simple fetch, no need for dict here
+        cursor.execute("""
+            SELECT t.ticket_id
+            FROM ticket AS t
+            LEFT JOIN purchases AS p
+                ON t.ticket_id = p.ticket_id
+            WHERE
+                t.for_ = %s
+                AND p.ticket_id IS NULL
+            LIMIT 1
+        """, (flight_num,))
+        row = cursor.fetchone()
 
+        if not row:
+            # No more tickets left for this flight
+            cursor.close()
+            conn.close()
+            return "Sorry, this flight has no tickets available.", 400
+
+        ticket_id = row[0]
+
+        # 2) Insert into purchases (date = today using CURDATE())
+        #    You can also use NOW() if you want date+time
+        cursor.execute("""
+            INSERT INTO purchases (customer_email, booking_agent_email, ticket_id, date)
+            VALUES (%s, %s, %s, CURDATE())
+        """, (customer_email, agent_email, ticket_id))
+
+        conn.commit()
         cursor.close()
         conn.close()
 
+        # You can redirect to a "my flights" page, or back to customer_home
         return redirect(url_for('customer_home'))
 
 
 @app.route('/spendingCust', methods=['GET'])
 def customer_spending():
+    if 'username' not in session:
+        return redirect(url_for('login_cust'))
+    
+    # customer_email = session['username']
+    
+    # conn = get_db_connection()
+    # cursor = conn.cursor()
+
+    # query = """
+    # SELECT * FROM flight
+    # FROM purchases NATURAL JOIN ticket NATURAL JOIN flight
+    # WHERE customer_email = %s
+
+    # """
+    # cursor.execute(query, (customer_email,))
+    # data1 = cursor.fetchall()
+
+    # cursor.close()
+    # conn.close()
+    
+
+
+
     # Later: query DB for this customer's spending
     return render_template('spendingCust.html')
 
-@app.route('/purchasesCust', methods=['GET'])
+@app.route('/purchasesCust', methods=['GET', 'POST'])
 def customer_purchases():
-    # Later: query DB for this customer's purchased flights
-    return render_template('purchasedCust.html')
+    if 'username' not in session:
+        return redirect(url_for('login_cust'))
+    
+    customer_email = session['username']
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # ---------- data1: upcoming purchased flights ----------
+    query = """
+        SELECT purchases.ticket_id, operated_by, flight_num, departure_date,
+               departure_time, arrival_date, arrival_time, status_, arrives, departs
+        FROM purchases
+        JOIN ticket ON purchases.ticket_id = ticket.ticket_id
+        JOIN flight ON ticket.for_ = flight.flight_num
+        WHERE customer_email = %s AND status_ = 'upcoming'
+    """
+    cursor.execute(query, (customer_email,))
+    data1 = cursor.fetchall()
+
+    # ---------- data2: all purchased flights (optionally filtered) ----------
+    query2 = """
+        SELECT purchases.ticket_id, operated_by, flight_num, departure_date,
+               departure_time, arrival_date, arrival_time, status_, arrives, departs
+        FROM purchases
+        JOIN ticket ON purchases.ticket_id = ticket.ticket_id
+        JOIN flight ON ticket.for_ = flight.flight_num
+        WHERE customer_email = %s
+    """
+
+    params = [customer_email]
+
+    if request.method == 'POST':
+        # 🔹 get values from the form body, not from args
+        start_date = request.form.get('start_date', '').strip()
+        end_date = request.form.get('end_date', '').strip()
+        origin = request.form.get('origin', '').strip()
+        destination = request.form.get('destination', '').strip()
+
+        if start_date:
+            query2 += " AND departure_date >= %s"
+            params.append(start_date)
+
+        if end_date:
+            query2 += " AND departure_date < %s"
+            params.append(end_date)
+
+        if origin:
+            query2 += " AND departs LIKE %s"
+            params.append(f"%{origin}%")
+
+        if destination:
+            query2 += " AND arrives = %s"
+            params.append(destination)
+
+    # For GET, we just use the base query2 with only customer_email
+    cursor.execute(query2, tuple(params))
+    data2 = cursor.fetchall()
+
+    print("DEBUG purchasesCust query2:", query2)
+    print("DEBUG purchasesCust params:", params)
+
+    cursor.close()
+    conn.close()
+
+    return render_template('purchasedCust.html', data1=data1, data2=data2)
+
 
 
 

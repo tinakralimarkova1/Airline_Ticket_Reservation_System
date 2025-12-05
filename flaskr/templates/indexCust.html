@@ -186,7 +186,9 @@
                         <th>Status</th>
                         <th>Arrival Airport</th>
                         <th>Departure Airport</th>
+                        <th>Tickets Left</th>
                         <th>Select</th>
+
                     </tr>
                     {% for line in data %}
                     <tr>
@@ -199,6 +201,7 @@
                         <td>{{ line[6] }}</td>
                         <td>{{ line[7] }}</td>
                         <td>{{ line[8] }}</td>
+                        <td>{{ line[9] }}</td> <!-- ✅ tickets left -->
                         <td>
                             <!-- For now just go to buyCust.html via /buy_cust -->
                             <form action="{{ url_for('buy_cust') }}" method="GET">
