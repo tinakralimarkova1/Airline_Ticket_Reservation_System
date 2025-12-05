@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Agent – Search Flights</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: "Verdana", sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        /* Top nav bar (same style as other pages) */
+        nav {
+            background-color: rgb(54, 96, 180);
+            color: white;
+            padding: 14px 24px;
+        }
+
+        nav ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+        nav a:hover { text-decoration: underline; }
+
+        /* Page layout */
+        .container {
+            max-width: 1100px;
+            margin: 40px auto 60px;
+            padding: 0 20px;
+        }
+
+        h1.page-title {
+            font-size: 32px;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        /* Search / filter bar – pink theme */
+        .filters {
+            margin: 10px 0 25px;
+            padding: 16px 18px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            border: 2px solid #ff8ad6;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 18px;
+            align-items: center;
+        }
+
+        .filters-label {
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            font-size: 12px;
+        }
+
+        .filter-group label {
+            margin-bottom: 2px;
+        }
+
+        .filter-group input {
+            padding: 4px 6px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            min-width: 130px;
+        }
+
+        .filter-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 14px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background-color: #ff8ad6;
+            color: #fff;
+        }
+
+        .btn-secondary {
+            background-color: #eee;
+            color: #333;
+        }
+
+        .btn:hover {
+            filter: brightness(0.95);
+        }
+
+        /* Messages */
+        .msg-error {
+            color: #b30000;
+            margin-bottom: 8px;
+        }
+
+        .msg-success {
+            color: #0b8a1b;
+            margin-bottom: 8px;
+        }
+
+        /* Table – pink border */
+        .table-wrapper {
+            overflow-x: auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            border: 2px solid #ff8ad6;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+        }
+
+        thead {
+            background-color: #ffe6f5;
+        }
+
+        th, td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #f7c5e6;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            font-weight: 600;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #fff7fc;
+        }
+
+        .empty-row {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .btn-buy {
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: none;
+            background-color: #ff8ad6;
+            color: #fff;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .btn-buy:hover {
+            filter: brightness(0.95);
+        }
+
+        /* Simple modal (uses :target) */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 20px 24px;
+            max-width: 400px;
+            width: 90%;
+            border: 2px solid #ff8ad6;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .modal h2 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 20px;
+        }
+
+        .modal p {
+            margin-top: 4px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .modal form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .modal label {
+            font-size: 13px;
+        }
+
+        .modal input[type="email"] {
+            padding: 6px 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .modal-close-link {
+            font-size: 13px;
+            text-decoration: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            background-color: #eee;
+            color: #333;
+        }
+
+        .modal-close-link:hover {
+            filter: brightness(0.95);
+        }
+
+        /* Use :target to show the modal */
+        .modal-overlay:target {
+            display: flex;
+        }
+
+        @media (max-width: 700px) {
+            .filters {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .filter-actions {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top navigation -->
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('agent_home') }}">Home</a></li>
+            <li><a href="{{ url_for('login_agent') }}">Login</a></li>
+            <li><a href="{{ url_for('register') }}">Register</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <h1 class="page-title">🔎 SEARCH FLIGHTS</h1>
+
+        <!-- show messages from backend -->
+        {% if error %}
+            <div class="msg-error">{{ error }}</div>
+        {% endif %}
+        {% if message %}
+            <div class="msg-success">{{ message }}</div>
+        {% endif %}
+
+        <!-- Search / filter form (GET) -->
+        <form class="filters" method="get" action="{{ url_for('agent_search') }}">
+            <span class="filters-label">Search:</span>
+
+            <div class="filter-group">
+                <label for="departure_airport">From (departure airport)</label>
+                <input type="text" id="departure_airport" name="departure_airport"
+                       value="{{ departure_airport or '' }}" placeholder="e.g. JFK">
+            </div>
+
+            <div class="filter-group">
+                <label for="arrival_airport">To (arrival airport)</label>
+                <input type="text" id="arrival_airport" name="arrival_airport"
+                       value="{{ arrival_airport or '' }}" placeholder="e.g. LAX">
+            </div>
+
+            <div class="filter-group">
+                <label for="departure_date">Departure date</label>
+                <input type="date" id="departure_date" name="departure_date"
+                       value="{{ departure_date or '' }}">
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Search</button>
+                <a href="{{ url_for('agent_search') }}" class="btn btn-secondary">Clear</a>
+            </div>
+        </form>
+
+        <!-- Flights table (only flight info) -->
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Flight No</th>
+                        <th>Airline</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Departure Date</th>
+                        <th>Departure Time</th>
+                        <th>Arrival Date</th>
+                        <th>Arrival Time</th>
+                        <th>Price</th>
+                        <th>Status</th>
+                        <th>Buy</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% if flights and flights|length > 0 %}
+                    {% for f in flights %}
+                        <tr>
+                            <td>{{ f.flight_num }}</td>
+                            <td>{{ f.airline_name }}</td>
+                            <td>{{ f.departs }}</td>
+                            <td>{{ f.arrives }}</td>
+                            <td>{{ f.departure_date }}</td>
+                            <td>{{ f.departure_time }}</td>
+                            <td>{{ f.arrival_date }}</td>
+                            <td>{{ f.arrival_time }}</td>
+                            <td>${{ "%.2f"|format(f.price) }}</td>
+                            <td>{{ f.status_ }}</td>
+                            <td>
+                                <!-- small Buy button opens modal via anchor -->
+                                <a href="#buy-{{ f.flight_num }}">
+                                    <button type="button" class="btn-buy">Buy</button>
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="11" class="empty-row">
+                            No flights found. Adjust your search filters.
+                        </td>
+                    </tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Purchase modals – one per flight row -->
+    {% if flights and flights|length > 0 %}
+        {% for f in flights %}
+            <div id="buy-{{ f.flight_num }}" class="modal-overlay">
+                <div class="modal">
+                    <h2>Purchase Ticket</h2>
+                    <p>Flight <strong>{{ f.flight_num }}</strong> – {{ f.departs }} → {{ f.arrives }}</p>
+                    <p><small>{{ f.departure_date }} {{ f.departure_time }} | Airline: {{ f.airline_name }}</small></p>
+
+                    <!-- POST purchase form -->
+                    <form method="post" action="{{ url_for('agent_search') }}">
+                        <!-- which flight is being purchased -->
+                        <input type="hidden" name="purchase_flight_num" value="{{ f.flight_num }}">
+
+                        <!-- insert_purchase details: customer_email; agent + date come from backend -->
+                        <label for="customer_email_{{ f.flight_num }}">Customer email</label>
+                        <input type="email"
+                               id="customer_email_{{ f.flight_num }}"
+                               name="customer_email"
+                               placeholder="customer@example.com"
+                               required>
+
+                        <div class="modal-actions">
+                            <a href="{{ url_for('agent_search',
+                                                departure_airport=departure_airport,
+                                                arrival_airport=arrival_airport,
+                                                departure_date=departure_date) }}"
+                               class="modal-close-link">Cancel</a>
+
+                            <button type="submit" class="btn-primary btn">
+                                Confirm Purchase
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+</body>
+</html>
