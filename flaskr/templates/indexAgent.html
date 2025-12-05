@@ -1,166 +1,191 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <title>Agent Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <style>
-        /* Styling for the navigation bar */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Verdana", sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        /* Top nav bar */
         nav {
             background-color: rgb(54, 96, 180);
             color: white;
-            text-align: left;
-            height: 50px;
-            padding-top: 14px;
-            padding-left: 20px;
-            padding-bottom: 10px;
+            padding: 14px 24px;
         }
 
-        a:link {
-            color: rgb(255, 255, 255);
-        }
-
-        a:visited {
-            color: white;
-        }
-
-        a:hover {
-            color: rgb(100, 158, 19);
-        }
-
-        a:active {
-            color: rgb(15, 204, 150);
-        }
-
-        a:link, a:visited {
-            text-decoration: none;
-        }
-
-        /* Centering the table */
-        .table-container {
+        nav ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
             display: flex;
-            justify-content: center;
+            gap: 24px;
             align-items: center;
         }
 
-        table, th, td {
-            border: 3px solid black;
-            border-collapse: collapse;
-            padding: 8px;
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
         }
 
-        * {box-sizing: border-box;}
-        body {font-family: Verdana, sans-serif;}
-        .mySlides {display: none;}
-        img {vertical-align: middle;}
-
-        /* Slideshow container */
-        .slideshow-container {
-        max-width: 1000px;
-        position: relative;
-        margin: auto;
+        nav a:hover {
+            text-decoration: underline;
         }
 
-        .active {
-        background-color: #717171;
-        }
-
-        /* Fading animation */
-        .fade {
-        animation-name: fade;
-        animation-duration: 1.5s;
-        }
-
-        @keyframes fade {
-        from {opacity: .4} 
-        to {opacity: 1}
-        }
-
-        /* On smaller screens, decrease text size */
-        @media only screen and (max-width: 300px) {
-        .text {font-size: 11px}
+        /* Page layout */
+        .container {
+            max-width: 900px;
+            margin: 40px auto 60px;
+            padding: 0 20px;
         }
 
         .welcome {
             text-align: center;
+            margin-bottom: 40px;
         }
 
-        .table-title {
-            text-align: center;
+        .welcome-title {
+            font-size: 32px;
+            margin-bottom: 8px;
         }
 
+        .welcome-subtitle {
+            font-size: 20px;
+            margin-top: 0;
+        }
+
+        /* Big clickable cards */
+        .cards {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .card-link {
+            text-decoration: none;
+        }
+
+        .card {
+            display: flex;
+            align-items: center;
+            padding: 20px 28px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .card--green {
+            border-color: #5bc86e;
+        }
+
+        .card--pink {
+            border-color: #ff8ad6;
+        }
+
+        .card--purple {
+            border-color: #a97cff;
+        }
+
+        .card-icon {
+            font-size: 56px;
+            margin-right: 26px;
+            flex-shrink: 0;
+        }
+
+        .card-text-main {
+            font-size: 22px;
+            font-weight: 600;
+            color: #222;
+            margin-bottom: 4px;
+        }
+
+        .card-text-sub {
+            font-size: 16px;
+            color: #444;
+        }
+
+        @media (max-width: 600px) {
+            .card {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+            .card-icon {
+                font-size: 44px;
+                margin-right: 18px;
+            }
+        }
     </style>
 </head>
 <body>
+
+    <!-- Top navigation -->
     <nav>
-        <a href="/">Home</a>
-        <a href="/login">Login</a>
-        <a href="/register">Register</a>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/login">Login</a></li>
+            <li><a href="/register">Register</a></li>
+        </ul>
     </nav>
 
-    <div class="welcome">
-        <h1>Welcome Agent to Airline Reservation System</h1>
+    <!-- Main content -->
+    <div class="container">
+        <div class="welcome">
+            <h1 class="welcome-title">Welcome back, Agent!</h1>
+            <p class="welcome-subtitle">What would you like to do?</p>
+        </div>
+
+        <div class="cards">
+            <!-- View purchased flights (green card) -->
+            <a class="card-link" href="{{ url_for('agent_flights') }}">
+                <div class="card card--green">
+                    <div class="card-icon">✈️</div>
+                    <div>
+                        <div class="card-text-main">View your purchased flights</div>
+                        <div class="card-text-sub">Check all the flights you have booked on behalf of customers</div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Search and purchase flights (pink card) -->
+            <a class="card-link" href="{{ url_for('agent_search') }}">
+                <div class="card card--pink">
+                    <div class="card-icon">🔍</div>
+                    <div>
+                        <div class="card-text-main">Search and purchase flights</div>
+                        <div class="card-text-sub">Find and book new flights for customers</div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Access analytics (purple card) -->
+            <a class="card-link" href="{{ url_for('agent_analytics') }}">
+                <div class="card card--purple">
+                    <div class="card-icon">📊</div>
+                    <div>
+                        <div class="card-text-main">Access Analytics</div>
+                        <div class="card-text-sub">Check commission totals, number of tickets sold, and more</div>
+                    </div>
+                </div>
+            </a>
+        </div>
     </div>
 
-    <div class="table-title">
-        <h3>Upcoming Flights</h3>
-    </div>
-
-
-      
-        
-
-    <div class="table-container">
-        <table>
-            <tr>
-                <th>Airline Name</th>
-                <th>Flight Number</th>
-                <th>Departure Time</th>
-                <th>Arrival Time</th>
-                <th>Status</th>
-                <th>Arrival Airport Name</th>
-                <th>Departure Airport Name</th>
-            </tr>
-        
-            {% for line in data %}
-            <tr>
-                <td>{{ line[0] }}</td>
-                <td>{{ line[1] }}</td>
-                <td>{{ line[2] }}</td>
-                <td>{{ line[3] }}</td>
-                <td>{{ line[4] }}</td>
-                <td>{{ line[5] }}</td>
-                <td>{{ line[6] }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-    </div>
-
-    <div class="table-container">
-        <table>
-            <tr>
-                <th>Airline Name</th>
-                <th>Flight Number</th>
-                <th>Departure Time</th>
-                <th>Arrival Time</th>
-                <th>Status</th>
-                <th>Arrival Airport Name</th>
-                <th>Departure Airport Name</th>
-
-                {% for line in data1 %}
-                <tr>
-                    <td>{{ line[0] }}</td>
-                    <td>{{ line[1] }}</td>
-                    <td>{{ line[2] }}</td>
-                    <td>{{ line[3] }}</td>
-                    <td>{{ line[4] }}</td>
-                    <td>{{ line[5] }}</td>
-                    <td>{{ line[6] }}</td>
-                </tr>
-                {% endfor %}
-
-            </tr>
-        </table>
-    </div>
-
-    
 </body>
 </html>
