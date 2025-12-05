@@ -58,7 +58,6 @@
         flex-wrap: wrap;
         gap: 10px 20px;
         align-items: center;
-        margin-bottom: 20px;
     }
 
     .search-form label {
@@ -94,27 +93,27 @@
 </nav>
 
 <body>
-    <div class="container">
+    <div class="container"> 
         <form action="/spendingCust" method="POST" class="search-form">
             <label>
                 Start Date:
                 <input type="date" name="start_date" value="{{ start_date_value }}">
             </label>
-
+    
             <label>
                 End Date:
                 <input type="date" name="end_date" value="{{ end_date_value }}">
             </label>
-
+    
             <button type="submit">Search</button>
         </form>
     </div>
 
-    <!-- Default: last 12 months total -->
-    <h1>Total Spendings in the last 12 months</h1>
+    <!-- Always show last 12 months summary -->
+    <h1>Total Spendings in the last year</h1>
     <h2>{{ total_spending_year }}</h2>
 
-    <!-- Custom total (only if custom range active) -->
+    <!-- Custom summary if active, otherwise default text -->
     {% if is_custom %}
         <h1>Total Spendings from {{ start_date_value }} to {{ end_date_value }}</h1>
         <h2>{{ custom_total_spending }}</h2>
@@ -139,26 +138,30 @@
             11: 'November',
             12: 'December'
         };
-
-        // Data from Flask
+    
+        // These come from Flask as Python lists → JSON arrays
         const monthNumbers = {{ month_numbers | tojson | safe }};
         const monthSpending = {{ month_spending | tojson | safe }};
 
-        // Convert numeric months to names
+        // Convert 1,2,3,… to 'January','February',...
         const monthLabels = monthNumbers.map(m => months[m]);
-
+    
         const data = [{
             x: monthLabels,
             y: monthSpending,
             type: 'bar'
         }];
-
+    
         const layout = {
-            title: 'Spending by Month',
-            xaxis: { title: 'Month' },
-            yaxis: { title: 'Spending' }
+            title: {{ chart_title | tojson | safe }},
+            xaxis: {
+                title: 'Month'
+            },
+            yaxis: {
+                title: 'Spending'
+            }
         };
-
+    
         Plotly.newPlot('spendingsCustChart', data, layout);
     </script>
 </body>

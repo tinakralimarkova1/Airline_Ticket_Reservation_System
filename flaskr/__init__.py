@@ -556,7 +556,7 @@ def customer_spending():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # ----- 1) Total spending in the last 12 months -----
+    # ----- 1) Total spending in the last 12 months (always shown) -----
     total_spending_sql = """
         SELECT COALESCE(SUM(f.price), 0) AS total_spent
         FROM purchases p
@@ -567,11 +567,10 @@ def customer_spending():
     """
     
     cursor.execute(total_spending_sql, (customer_email,))
-    row = cursor.fetchone()          # e.g. (Decimal('350.00'),) or (None,)
+    row = cursor.fetchone()
     total_spending_year = float(row[0] or 0)
 
-    # ----- 2) Spending per month over the last 6 months -----
-    # Build last 6 months in Python (including current month)
+    # ----- 2) Default chart: last 6 months (what you already have) -----
     today = date.today()
     months = []
     y = today.year
@@ -584,7 +583,7 @@ def customer_spending():
             y -= 1
     months.reverse()                 # oldest first
 
-    # Query DB for spending grouped by year+month in that range
+    # Query DB for spending grouped by year+month in that 6-month window
     start_year, start_month = months[0]
     start_date = date(start_year, start_month, 1)
     end_date = today
@@ -605,21 +604,105 @@ def customer_spending():
     cursor.execute(monthly_sql, (customer_email, start_date, end_date))
     rows = cursor.fetchall()   # e.g. [(2025, 7, 120.0), (2025, 9, 300.0), ...]
 
-    # Map (year, month) -> total_spent
     spending_by_ym = {
         (int(r[0]), int(r[1])): float(r[2] or 0)
         for r in rows
     }
 
-    # Build lists for Plotly: always 6 entries
-    month_numbers = []
-    month_spending = []
-    for (y, m) in months:
-        month_numbers.append(m)
-        month_spending.append(spending_by_ym.get((y, m), 0.0))
+    default_month_numbers = []
+    default_month_spending = []
+    for (yy, mm) in months:
+        default_month_numbers.append(mm)
+        default_month_spending.append(spending_by_ym.get((yy, mm), 0.0))
 
-    print("Debug month_numbers:", month_numbers)
-    print("Debug month_spending:", month_spending)
+    # ----- 3) Custom range (if user submits dates) -----
+    is_custom = False
+    custom_total_spending = None
+    chart_title = "Spending per Month over the last 6 months"
+    chart_month_numbers = default_month_numbers
+    chart_month_spending = default_month_spending
+    start_date_value = ""
+    end_date_value = ""
+
+    if request.method == 'POST':
+        start_date_value = (request.form.get('start_date') or "").strip()
+        end_date_value = (request.form.get('end_date') or "").strip()
+
+        if start_date_value and end_date_value:
+            try:
+                start_d = datetime.strptime(start_date_value, "%Y-%m-%d").date()
+                end_d = datetime.strptime(end_date_value, "%Y-%m-%d").date()
+
+                # If reversed, swap
+                if end_d < start_d:
+                    start_d, end_d = end_d, start_d
+                    start_date_value, end_date_value = end_date_value, start_date_value
+
+                is_custom = True
+
+                # 3a) Total spending in custom range
+                custom_total_sql = """
+                    SELECT COALESCE(SUM(f.price), 0) AS total_spent
+                    FROM purchases p
+                    JOIN ticket t ON p.ticket_id = t.ticket_id
+                    JOIN flight f ON t.for_ = f.flight_num
+                    WHERE p.customer_email = %s
+                      AND p.date BETWEEN %s AND %s
+                """
+                cursor.execute(custom_total_sql, (customer_email, start_d, end_d))
+                row = cursor.fetchone()
+                custom_total_spending = float(row[0] or 0)
+
+                # 3b) Monthly breakdown for custom range
+                monthly_custom_sql = """
+                    SELECT 
+                        YEAR(p.date) AS y,
+                        MONTH(p.date) AS m,
+                        COALESCE(SUM(f.price), 0) AS total_spent
+                    FROM purchases p
+                    JOIN ticket t ON p.ticket_id = t.ticket_id
+                    JOIN flight f ON t.for_ = f.flight_num
+                    WHERE p.customer_email = %s
+                      AND p.date BETWEEN %s AND %s
+                    GROUP BY y, m
+                    ORDER BY y, m
+                """
+                cursor.execute(monthly_custom_sql, (customer_email, start_d, end_d))
+                rows = cursor.fetchall()
+
+                spending_by_ym_custom = {
+                    (int(r[0]), int(r[1])): float(r[2] or 0)
+                    for r in rows
+                }
+
+                # helper to generate all months between start_d and end_d (inclusive)
+                def iter_months(sd, ed):
+                    yy = sd.year
+                    mm = sd.month
+                    res = []
+                    while (yy < ed.year) or (yy == ed.year and mm <= ed.month):
+                        res.append((yy, mm))
+                        mm += 1
+                        if mm == 13:
+                            mm = 1
+                            yy += 1
+                    return res
+
+                all_months = iter_months(start_d, end_d)
+
+                chart_month_numbers = []
+                chart_month_spending = []
+                for (yy, mm) in all_months:
+                    chart_month_numbers.append(mm)
+                    chart_month_spending.append(
+                        spending_by_ym_custom.get((yy, mm), 0.0)
+                    )
+
+                chart_title = f"Spending per Month from {start_date_value} to {end_date_value}"
+
+            except ValueError:
+                # bad date format → just keep default chart
+                pass
 
     cursor.close()
     conn.close()
@@ -627,8 +710,15 @@ def customer_spending():
     return render_template(
         'spendingCust.html',
         total_spending_year=total_spending_year,
-        month_numbers=month_numbers,
-        month_spending=month_spending
+        # chart data (default or custom)
+        month_numbers=chart_month_numbers,
+        month_spending=chart_month_spending,
+        chart_title=chart_title,
+        # custom info
+        is_custom=is_custom,
+        custom_total_spending=custom_total_spending,
+        start_date_value=start_date_value,
+        end_date_value=end_date_value
     )
 
 
