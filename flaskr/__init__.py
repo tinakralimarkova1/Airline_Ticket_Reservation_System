@@ -574,7 +574,7 @@ def customer_purchases():
     cursor = conn.cursor()
 
     query = """
-    SELECT * 
+    SELECT purchases.ticket_id, operated_by, flight_num, departure_date, departure_time, arrival_date, arrival_time, status_, arrives, departs
     FROM (purchases JOIN ticket ON purchases.ticket_id = ticket.ticket_id) JOIN flight ON ticket.for_ = flight.flight_num
     WHERE customer_email = %s and status_ = 'upcoming'
 
