@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, url_for, redirect, session
 import mysql.connector
-from datetime import date
+from datetime import date, datetime
 
 #Initialize the app from Flask
 app = Flask(__name__)
@@ -20,10 +20,7 @@ def require_agent():
         return redirect(url_for('login_agent'))
     return None 
 
-def normalize_date(value):
-    if isinstance(value, date):
-        return value.strftime('%Y-%m-%d')
-    return value
+
 
 #Define a route to hello function
 @app.route('/', methods=['GET'])
@@ -546,35 +543,94 @@ def buy_cust():
 
         # You can redirect to a "my flights" page, or back to customer_home
         return redirect(url_for('customer_home'))
+    
+from datetime import date
 
-
-@app.route('/spendingCust', methods=['GET'])
+@app.route('/spendingCust', methods=['GET', 'POST'])
 def customer_spending():
     if 'username' not in session:
         return redirect(url_for('login_cust'))
     
-    # customer_email = session['username']
+    customer_email = session['username']
     
-    # conn = get_db_connection()
-    # cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
-    # query = """
-    # SELECT * FROM flight
-    # FROM purchases NATURAL JOIN ticket NATURAL JOIN flight
-    # WHERE customer_email = %s
-
-    # """
-    # cursor.execute(query, (customer_email,))
-    # data1 = cursor.fetchall()
-
-    # cursor.close()
-    # conn.close()
+    # ----- 1) Total spending in the last 12 months -----
+    total_spending_sql = """
+        SELECT COALESCE(SUM(f.price), 0) AS total_spent
+        FROM purchases p
+        JOIN ticket t ON p.ticket_id = t.ticket_id
+        JOIN flight f ON t.for_ = f.flight_num
+        WHERE p.customer_email = %s
+          AND p.date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+    """
     
+    cursor.execute(total_spending_sql, (customer_email,))
+    row = cursor.fetchone()          # e.g. (Decimal('350.00'),) or (None,)
+    total_spending_year = float(row[0] or 0)
 
+    # ----- 2) Spending per month over the last 6 months -----
+    # Build last 6 months in Python (including current month)
+    today = date.today()
+    months = []
+    y = today.year
+    m = today.month
+    for _ in range(6):
+        months.append((y, m))        # (year, month)
+        m -= 1
+        if m == 0:
+            m = 12
+            y -= 1
+    months.reverse()                 # oldest first
 
+    # Query DB for spending grouped by year+month in that range
+    start_year, start_month = months[0]
+    start_date = date(start_year, start_month, 1)
+    end_date = today
 
-    # Later: query DB for this customer's spending
-    return render_template('spendingCust.html')
+    monthly_sql = """
+        SELECT 
+            YEAR(p.date) AS y,
+            MONTH(p.date) AS m,
+            COALESCE(SUM(f.price), 0) AS total_spent
+        FROM purchases p
+        JOIN ticket t ON p.ticket_id = t.ticket_id
+        JOIN flight f ON t.for_ = f.flight_num
+        WHERE p.customer_email = %s
+          AND p.date BETWEEN %s AND %s
+        GROUP BY y, m
+        ORDER BY y, m
+    """
+    cursor.execute(monthly_sql, (customer_email, start_date, end_date))
+    rows = cursor.fetchall()   # e.g. [(2025, 7, 120.0), (2025, 9, 300.0), ...]
+
+    # Map (year, month) -> total_spent
+    spending_by_ym = {
+        (int(r[0]), int(r[1])): float(r[2] or 0)
+        for r in rows
+    }
+
+    # Build lists for Plotly: always 6 entries
+    month_numbers = []
+    month_spending = []
+    for (y, m) in months:
+        month_numbers.append(m)
+        month_spending.append(spending_by_ym.get((y, m), 0.0))
+
+    print("Debug month_numbers:", month_numbers)
+    print("Debug month_spending:", month_spending)
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'spendingCust.html',
+        total_spending_year=total_spending_year,
+        month_numbers=month_numbers,
+        month_spending=month_spending
+    )
+
 
 @app.route('/purchasesCust', methods=['GET', 'POST'])
 def customer_purchases():
@@ -637,9 +693,7 @@ def customer_purchases():
     cursor.execute(query2, tuple(params))
     data2 = cursor.fetchall()
 
-    print("DEBUG purchasesCust query2:", query2)
-    print("DEBUG purchasesCust params:", params)
-
+    
     cursor.close()
     conn.close()
 
