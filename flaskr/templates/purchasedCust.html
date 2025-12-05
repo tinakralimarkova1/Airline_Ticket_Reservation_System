@@ -131,29 +131,30 @@
     <h2>Search all purchased flights</h2>
 
     <div class="container">
-        <form action="/" method="GET">
+        <form action="{{ url_for('customer_purchases') }}" method="POST">
             <label>
                 Start Date:
-                <input type="date" name="start_date" placeholder="">
+                <input type="date" name="start_date">
             </label>
-    
+        
             <label>
                 End Date:
-                <input type="date" name="end_date" placeholder="">
+                <input type="date" name="end_date">
             </label>
-    
+        
             <label>
-               Origin:
-                <input type="text" name="origin" placeholder="e.g.JFK">
+                Origin:
+                <input type="text" name="origin" placeholder="e.g. JFK">
             </label>
-
+        
             <label>
                 Destination:
-                <input type="text" name="destination" placeholder="e.g.LAX">
+                <input type="text" name="destination" placeholder="e.g. LAX">
             </label>
-    
+        
             <button type="submit">Search</button>
         </form>
+        
     </div>
 
     <div class="table-container">
@@ -171,7 +172,7 @@
                 <th>Arrival Airport Name</th>
                 <th>Departure Airport Name</th>
             </tr>
-            {% for line in data1 %}
+            {% for line in data2 %}
             <tr>
                 <td>{{ line[0] }}</td>
                 <td>{{ line[1] }}</td>

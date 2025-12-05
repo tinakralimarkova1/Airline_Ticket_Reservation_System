@@ -561,10 +561,8 @@ def customer_spending():
     # Later: query DB for this customer's spending
     return render_template('spendingCust.html')
 
-@app.route('/purchasesCust', methods=['GET'])
+@app.route('/purchasesCust', methods=['GET', 'POST'])
 def customer_purchases():
-    # Later: query DB for this customer's purchased flights
-
     if 'username' not in session:
         return redirect(url_for('login_cust'))
     
@@ -573,22 +571,65 @@ def customer_purchases():
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    # ---------- data1: upcoming purchased flights ----------
     query = """
-    SELECT purchases.ticket_id, operated_by, flight_num, departure_date, departure_time, arrival_date, arrival_time, status_, arrives, departs
-    FROM (purchases JOIN ticket ON purchases.ticket_id = ticket.ticket_id) JOIN flight ON ticket.for_ = flight.flight_num
-    WHERE customer_email = %s and status_ = 'upcoming'
-
+        SELECT purchases.ticket_id, operated_by, flight_num, departure_date,
+               departure_time, arrival_date, arrival_time, status_, arrives, departs
+        FROM purchases
+        JOIN ticket ON purchases.ticket_id = ticket.ticket_id
+        JOIN flight ON ticket.for_ = flight.flight_num
+        WHERE customer_email = %s AND status_ = 'upcoming'
     """
     cursor.execute(query, (customer_email,))
     data1 = cursor.fetchall()
 
+    # ---------- data2: all purchased flights (optionally filtered) ----------
+    query2 = """
+        SELECT purchases.ticket_id, operated_by, flight_num, departure_date,
+               departure_time, arrival_date, arrival_time, status_, arrives, departs
+        FROM purchases
+        JOIN ticket ON purchases.ticket_id = ticket.ticket_id
+        JOIN flight ON ticket.for_ = flight.flight_num
+        WHERE customer_email = %s
+    """
+
+    params = [customer_email]
+
+    if request.method == 'POST':
+        # 🔹 get values from the form body, not from args
+        start_date = request.form.get('start_date', '').strip()
+        end_date = request.form.get('end_date', '').strip()
+        origin = request.form.get('origin', '').strip()
+        destination = request.form.get('destination', '').strip()
+
+        if start_date:
+            query2 += " AND departure_date >= %s"
+            params.append(start_date)
+
+        if end_date:
+            query2 += " AND departure_date < %s"
+            params.append(end_date)
+
+        if origin:
+            query2 += " AND departs LIKE %s"
+            params.append(f"%{origin}%")
+
+        if destination:
+            query2 += " AND arrives = %s"
+            params.append(destination)
+
+    # For GET, we just use the base query2 with only customer_email
+    cursor.execute(query2, tuple(params))
+    data2 = cursor.fetchall()
+
+    print("DEBUG purchasesCust query2:", query2)
+    print("DEBUG purchasesCust params:", params)
+
     cursor.close()
     conn.close()
 
+    return render_template('purchasedCust.html', data1=data1, data2=data2)
 
-
-
-    return render_template('purchasedCust.html', data1=data1)
 
 
 
