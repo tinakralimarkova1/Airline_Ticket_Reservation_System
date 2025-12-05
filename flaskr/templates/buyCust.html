@@ -108,11 +108,22 @@
         </div>
 
         <form action="/buy_cust" method="POST">
-            <!-- which flight are we buying? -->
             <input type="hidden" name="flight_num" value="{{ flight.flight_num }}">
+            <input type="hidden" name="operated_by" value="{{ flight.operated_by }}">
+            <input type="hidden" name="departure_time" value="{{ flight.departure_time }}">
+            <input type="hidden" name="arrival_time" value="{{ flight.arrival_time }}">
+            <input type="hidden" name="departure_date" value="{{ flight.departure_date }}">
+            <input type="hidden" name="arrival_date" value="{{ flight.arrival_date }}">
+            <input type="hidden" name="departs" value="{{ flight.departs }}">
+            <input type="hidden" name="arrives" value="{{ flight.arrives }}">
+            <input type="hidden" name="price" value="{{ flight.price }}">
+        
+            <!-- If purchase_date = NOW() in SQL, you can skip -->
+            <input type="hidden" name="purchase_date" value="{{ current_date }}">
+        
             <button type="submit">Purchase Flight</button>
         </form>
-
+        
     </div>
 
 </body>
