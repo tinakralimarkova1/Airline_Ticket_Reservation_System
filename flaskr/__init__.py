@@ -14,6 +14,18 @@ def get_db_connection():
         database='Airline_Reservation_System')
 
 ## helper functions for agent
+
+@app.after_request
+def add_no_cache_headers(response):
+    """
+    Prevent caching so that back/forward buttons do not show
+    logged-in pages after logout.
+    """
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 def require_agent(): 
     if session.get('user_type') != 'agent': 
         # redirect if not an agent to 
@@ -989,7 +1001,7 @@ def staff_home():
 
 @app.route('/logout')
 def logout():
-    session.pop('username')
+    session.clear()
     return redirect('/')
 
 	
