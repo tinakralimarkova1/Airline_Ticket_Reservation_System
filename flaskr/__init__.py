@@ -1014,6 +1014,44 @@ def agent_analytics():
     if redirect_or_none:
         return redirect_or_none
     
+    agent_email = session.get('agent_email')
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # 4.1 get commission totals for the last 30 days 
+    # this assumes booking agent gets a commission of 10%
+    monthly_commission_query = """ 
+        SELECT SUM(f.price * 0.1) 
+        FROM purchases as p  
+        JOIN ticket as t ON p.ticket_id = t.ticket_id 
+        JOIN flight as f ON t.for_ = f.flight_num 
+        WHERE p.booking_agent_email = %s AND p.date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY )
+    """
+    cursor.execute(monthly_commission_query, (agent_email,))
+
+    # 4.2 average commission per ticket 
+    avg_commission_query = """ 
+        SELECT AVG(f.price * 0.1)
+        FROM purchases as p  
+        JOIN ticket as t ON p.ticket_id = t.ticket_id 
+        JOIN flight as f ON t.for_ = f.flight_num 
+        WHERE p.booking_agent_email = %s
+    """
+    cursor.execute(avg_commission_query, (agent_email,))
+
+    # 4.3 number of tickets sold 
+    tixsold_query = """ 
+        SELECT COUNT(*)
+        FROM purchases as p  
+        JOIN ticket as t ON p.ticket_id = t.ticket_id 
+        JOIN flight as f ON t.for_ = f.flight_num 
+        WHERE p.booking_agent_email = %s
+    """
+    cursor.execute(tixsold_query, (agent_email,))
+    
+    # 4.4 bar charts for top 5 customers by number of tickets (last 6 months)
+    # 4.5 bar charts for top 5 customers by commission (last year)
+    
 
     return render_template('agentAnalytics.html')  
 
