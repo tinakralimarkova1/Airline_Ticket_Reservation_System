@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+
+    nav {
+            background-color: rgb(54, 96, 180);
+            color: white;
+            text-align: left;
+            height: 50px;
+            padding-top: 14px;
+            padding-left: 20px;
+            padding-bottom: 10px;
+        }
+
+        a:link {
+            color: rgb(255, 255, 255);
+        }
+
+        a:visited {
+            color: white;
+        }
+
+        a:hover {
+            color: rgb(100, 158, 19);
+        }
+
+        a:active {
+            color: rgb(15, 204, 150);
+        }
+
+        a:link, a:visited {
+            text-decoration: none;
+        }
+         /* Table styling */
+    .table-container {
+        margin-top: 20px;
+        overflow-x: auto;
+    }
+
+    table, th, td {
+        border: 2px solid black;
+        border-collapse: collapse;
+        padding: 8px;
+    }
+
+    table {
+        width: 100%;
+        background-color: white;
+    }
+
+    th {
+        background-color: #89c3e8;
+    }
+
+    /* Search form */
+    .search-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 20px;
+        align-items: center;
+    }
+
+    .search-form label {
+        display: flex;
+        flex-direction: column;
+        font-size: 14px;
+    }
+
+    .search-form input {
+        padding: 4px 6px;
+        margin-top: 4px;
+    }
+
+    .search-form button {
+        padding: 8px 12px;
+        background-color: rgb(54, 96, 180);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    </style>
+
+
+    <title>Purchased</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js" charset="utf-8"></script>
+</head>
+<nav>
+    <a href="/">Home</a>
+    <a href="/login">Login</a>
+    <a href="/register">Register</a>
+</nav>
+<body>
+    <h1>Upcoming Flights</h1>
+
+    <div class="table-container">
+        <table>
+            <tr>
+                <th>Ticket ID</th>
+                <th>Airline Name</th>
+                <th>Flight Number</th>
+                <th>Departure Date</th>
+                <th>Departure Time</th>
+                <th>Arrival Date</th>
+                <th>Arrival Time</th>
+                <th>Status</th>
+                <th>Arrival Airport Name</th>
+                <th>Departure Airport Name</th>
+            </tr>
+            {% for line in data1 %}
+            <tr>
+                <td>{{ line[0] }}</td>
+                <td>{{ line[1] }}</td>
+                <td>{{ line[2] }}</td>
+                <td>{{ line[3] }}</td>
+                <td>{{ line[4] }}</td>
+                <td>{{ line[5] }}</td>
+                <td>{{ line[6] }}</td>
+                <td>{{ line[7] }}</td>
+                <td>{{ line[8] }}</td>
+                <td>{{ line[9] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <h2>Search all purchased flights</h2>
+
+    <div class="container">
+        <form action="{{ url_for('customer_purchases') }}" method="POST">
+            <label>
+                Start Date:
+                <input type="date" name="start_date">
+            </label>
+        
+            <label>
+                End Date:
+                <input type="date" name="end_date">
+            </label>
+        
+            <label>
+                Origin:
+                <input type="text" name="origin" placeholder="e.g. JFK">
+            </label>
+        
+            <label>
+                Destination:
+                <input type="text" name="destination" placeholder="e.g. LAX">
+            </label>
+        
+            <button type="submit">Search</button>
+        </form>
+        
+    </div>
+
+    <div class="table-container">
+
+        <table>
+            <tr>
+                <th>Ticket ID</th>
+                <th>Airline Name</th>
+                <th>Flight Number</th>
+                <th>Departure Date</th>
+                <th>Departure Time</th>
+                <th>Arrival Date</th>
+                <th>Arrival Time</th>
+                <th>Status</th>
+                <th>Arrival Airport Name</th>
+                <th>Departure Airport Name</th>
+            </tr>
+            {% for line in data2 %}
+            <tr>
+                <td>{{ line[0] }}</td>
+                <td>{{ line[1] }}</td>
+                <td>{{ line[2] }}</td>
+                <td>{{ line[3] }}</td>
+                <td>{{ line[4] }}</td>
+                <td>{{ line[5] }}</td>
+                <td>{{ line[6] }}</td>
+                <td>{{ line[7] }}</td>
+                <td>{{ line[8] }}</td>
+                <td>{{ line[9] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+ 
+    </div>
+
+
+
+
+
+
+
+   
+</body>
+</html>

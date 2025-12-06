@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+
+    nav {
+            background-color: rgb(54, 96, 180);
+            color: white;
+            text-align: left;
+            height: 50px;
+            padding-top: 14px;
+            padding-left: 20px;
+            padding-bottom: 10px;
+        }
+
+        a:link {
+            color: rgb(255, 255, 255);
+        }
+
+        a:visited {
+            color: white;
+        }
+
+        a:hover {
+            color: rgb(100, 158, 19);
+        }
+
+        a:active {
+            color: rgb(15, 204, 150);
+        }
+
+        a:link, a:visited {
+            text-decoration: none;
+        }
+         /* Table styling */
+    .table-container {
+        margin-top: 20px;
+        overflow-x: auto;
+    }
+
+    table, th, td {
+        border: 2px solid black;
+        border-collapse: collapse;
+        padding: 8px;
+    }
+
+    table {
+        width: 100%;
+        background-color: white;
+    }
+
+    th {
+        background-color: #89c3e8;
+    }
+
+    /* Search form */
+    .search-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 20px;
+        align-items: center;
+    }
+
+    .search-form label {
+        display: flex;
+        flex-direction: column;
+        font-size: 14px;
+    }
+
+    .search-form input {
+        padding: 4px 6px;
+        margin-top: 4px;
+    }
+
+    .search-form button {
+        padding: 8px 12px;
+        background-color: rgb(54, 96, 180);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    </style>
+
+
+    <title>Spending</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js" charset="utf-8"></script>
+</head>
+<nav>
+    <a href="/">Home</a>
+    <a href="/login">Login</a>
+    <a href="/register">Register</a>
+</nav>
+<body>
+    <div class="container"> 
+        <form action="/spendingCust" method="POST">
+            <label>
+                Start Date:
+                <input type="date" name="start_date" placeholder="">
+            </label>
+    
+            <label>
+                End Date:
+                <input type="date" name="end_date" placeholder="">
+            </label>
+    
+            <button type="submit">Search</button>
+
+        </form>
+    </div>
+    <h1>Total Spendings in the last year</h1>
+    <h2>{{ total_spending_year }}</h2>
+
+
+    <div id="spendingsCustChart" style="width:1000px;height:800px;"></div>
+
+    <script>
+        var data = [{
+            x: [1, 2, 3, 4],
+            y: [10, 15, 13, 17],
+            type: 'bar'
+        }];
+
+        var layout = {
+            title: 'Spending'
+        };
+
+        Plotly.newPlot('spendingsCustChart', data, layout);
+    </script>
+</body>
+</html>
