@@ -278,6 +278,18 @@ def register_customer():
         if not all([email, name, password, building_number, street, city, state, phone_number, passport_number, passport_expiration_date, passport_country, date_of_birth]):
             error = "All fields are required"
             return render_template('registerCust.html', error=error)
+        if type(building_number) != int:
+            error = "Building number must be an integer"
+            return render_template('registerCust.html', error=error)
+        
+        if type(phone_number) != int:
+            error = "Phone number must be an integer"
+            return render_template('registerCust.html', error=error)
+        
+        if type(passport_number) != int:
+            error = "Passport number must be an integer"
+            return render_template('registerCust.html', error=error)
+        
     
 
 
