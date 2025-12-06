@@ -151,6 +151,17 @@
             <p>Date of Birth</p>
             <input type="date" name="date_of_birth" required/>
 
+            <p>Airline</p>
+            <input type="text" name="works_for" placeholder="Airline" required/>
+
+            <p>Admin or Operator</p>
+            <select name="permissions" required>
+                <option value="admin">Admin</option>
+                <option value="operator">Operator</option>
+            </select>
+
+
+
             <button type="submit">Register</button>
 
             {% if error %}

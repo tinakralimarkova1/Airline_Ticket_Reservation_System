@@ -232,7 +232,7 @@ def login_staff():
         cursor = conn.cursor()
 
         #query and fetching data
-        query = "SELECT username, password FROM airline_staff WHERE username = %s and password = SHA2(%s, 256)"
+        query = "SELECT username, password, permissions FROM airline_staff WHERE username = %s and password = SHA2(%s, 256)"
         cursor.execute(query, (username, password))
         data = cursor.fetchone()
         cursor.close()
@@ -243,6 +243,7 @@ def login_staff():
         if data:
             session['username'] = username
             session['user_type'] = 'staff'
+            session['permissions'] = data[2]
             return redirect(url_for('staff_home'))
         else:
             error = 'Invalid login or username'
@@ -376,16 +377,42 @@ def register_staff():
         first_name = request.form.get('first_name')
         last_name = request.form.get('last_name')
         date_of_birth = request.form.get('date_of_birth')
+        works_for = request.form.get('works_for')
+        permissions = request.form.get('permissions')
 
-
-        if not all([username, password, first_name, last_name, date_of_birth]):
+        # validate input
+        if not all([username, password, first_name, last_name, date_of_birth, works_for, permissions]):
             error = "All fields are required"
             return render_template('registerStaff.html', error=error)
+        
+        if permissions not in ['admin', 'operator']:
+            error = "Invalid permissions selected"
+            return render_template('registerStaff.html', error=error)
+        
+        if date_of_birth:
+            try:
+                datetime.strptime(date_of_birth, '%Y-%m-%d')
+            except ValueError:
+                error = "Invalid date of birth format"
+                return render_template('registerStaff.html', error=error)
+            
+        
     
 
 
         conn = get_db_connection()
         cursor = conn.cursor()
+
+        # check if airline exists
+        check_airline_query = "SELECT name FROM airline WHERE name = %s"
+        cursor.execute(check_airline_query, (works_for,))
+        airline_data = cursor.fetchone()
+
+        if not airline_data:
+            error = "Invalid airline name"
+            return render_template('registerStaff.html', error=error)
+        
+        # check if username already exists
 
         query = "SELECT username FROM airline_staff WHERE username = %s"
         cursor.execute(query, (username,))
@@ -396,9 +423,9 @@ def register_staff():
             return render_template('registerStaff.html', error=error)
         else:
             # Insert the new customer record
-            query = """INSERT INTO airline_staff (username,password, first_name, last_name, date_of_birth) 
-                       VALUES (%s, SHA2(%s, 256), %s, %s, %s)"""
-            cursor.execute(query, (username, password, first_name, last_name, date_of_birth))
+            query = """INSERT INTO airline_staff (username,password, first_name, last_name, date_of_birth, permissions, works_for) 
+                       VALUES (%s, SHA2(%s, 256), %s, %s, %s, %s, %s)"""
+            cursor.execute(query, (username, password, first_name, last_name, date_of_birth, permissions, works_for))
             conn.commit()
             cursor.close()
             conn.close()
