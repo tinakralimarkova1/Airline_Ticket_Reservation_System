@@ -2,6 +2,65 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f6ff;
+        }
+
+        /* Nav Bar */
+        nav {
+            background-color: rgb(54, 96, 180);
+            padding: 14px 24px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-right: 20px;
+            font-size: 16px;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        /* Centered selection box */
+        .selection {
+            max-width: 420px;
+            margin: 120px auto 0 auto;
+            background: #ffffff;
+            padding: 40px 50px;
+            border-radius: 12px;
+            box-shadow: 0 0 12px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .selection h1 {
+            margin-bottom: 30px;
+            font-size: 24px;
+            color: #333;
+        }
+
+        /* Buttons */
+        .selection button {
+            width: 100%;
+            padding: 12px 0;
+            margin: 10px 0;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: rgb(54, 96, 180);
+            color: white;
+            transition: background-color 0.2s;
+        }
+
+        .selection button:hover {
+            background-color: rgb(44, 80, 150);
+        }
+    </style>
     <title>Select Role</title>
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
@@ -13,7 +72,7 @@
     </nav>
 
     <div class="selection">
-        <h1>Select Your Role for Registration</h1>
+        <h1>Select your role for registration</h1>
         <form action="/regUser" method="POST">
             <button type="submit" name="role" value="customer">Customer</button>
             <button type="submit" name="role" value="booking_agent">Booking Agent</button>

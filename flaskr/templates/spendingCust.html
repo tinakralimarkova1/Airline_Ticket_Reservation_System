@@ -3,37 +3,36 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-
     nav {
-            background-color: rgb(54, 96, 180);
-            color: white;
-            text-align: left;
-            height: 50px;
-            padding-top: 14px;
-            padding-left: 20px;
-            padding-bottom: 10px;
-        }
+        background-color: rgb(54, 96, 180);
+        color: white;
+        text-align: left;
+        height: 50px;
+        padding-top: 14px;
+        padding-left: 20px;
+        padding-bottom: 10px;
+    }
 
-        a:link {
-            color: rgb(255, 255, 255);
-        }
+    a:link {
+        color: rgb(255, 255, 255);
+    }
 
-        a:visited {
-            color: white;
-        }
+    a:visited {
+        color: white;
+    }
 
-        a:hover {
-            color: rgb(100, 158, 19);
-        }
+    a:hover {
+        color: rgb(100, 158, 19);
+    }
 
-        a:active {
-            color: rgb(15, 204, 150);
-        }
+    a:active {
+        color: rgb(15, 204, 150);
+    }
 
-        a:link, a:visited {
-            text-decoration: none;
-        }
-         /* Table styling */
+    a:link, a:visited {
+        text-decoration: none;
+    }
+
     .table-container {
         margin-top: 20px;
         overflow-x: auto;
@@ -54,7 +53,6 @@
         background-color: #89c3e8;
     }
 
-    /* Search form */
     .search-form {
         display: flex;
         flex-wrap: wrap;
@@ -82,52 +80,88 @@
         cursor: pointer;
         font-size: 14px;
     }
-
     </style>
-
 
     <title>Spending</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js" charset="utf-8"></script>
 </head>
+
 <nav>
     <a href="/">Home</a>
     <a href="/login">Login</a>
     <a href="/register">Register</a>
 </nav>
+
 <body>
     <div class="container"> 
-        <form action="/spendingCust" method="POST">
+        <form action="/spendingCust" method="POST" class="search-form">
             <label>
                 Start Date:
-                <input type="date" name="start_date" placeholder="">
+                <input type="date" name="start_date" value="{{ start_date_value }}">
             </label>
     
             <label>
                 End Date:
-                <input type="date" name="end_date" placeholder="">
+                <input type="date" name="end_date" value="{{ end_date_value }}">
             </label>
     
             <button type="submit">Search</button>
-
         </form>
     </div>
+
+    <!-- Always show last 12 months summary -->
     <h1>Total Spendings in the last year</h1>
     <h2>{{ total_spending_year }}</h2>
 
+    <!-- Custom summary if active, otherwise default text -->
+    {% if is_custom %}
+        <h1>Total Spendings from {{ start_date_value }} to {{ end_date_value }}</h1>
+        <h2>{{ custom_total_spending }}</h2>
+    {% else %}
+        <h1>Total Spendings in the last 6 months</h1>
+    {% endif %}
 
     <div id="spendingsCustChart" style="width:1000px;height:800px;"></div>
 
-    <script>
-        var data = [{
-            x: [1, 2, 3, 4],
-            y: [10, 15, 13, 17],
+    <script type="text/javascript">
+        const months = {
+            1: 'January',
+            2: 'February',
+            3: 'March',
+            4: 'April',
+            5: 'May',
+            6: 'June',
+            7: 'July',
+            8: 'August',
+            9: 'September',
+            10: 'October',
+            11: 'November',
+            12: 'December'
+        };
+    
+        // These come from Flask as Python lists → JSON arrays
+        const monthNumbers = {{ month_numbers | tojson | safe }};
+        const monthSpending = {{ month_spending | tojson | safe }};
+
+        // Convert 1,2,3,… to 'January','February',...
+        const monthLabels = monthNumbers.map(m => months[m]);
+    
+        const data = [{
+            x: monthLabels,
+            y: monthSpending,
             type: 'bar'
         }];
-
-        var layout = {
-            title: 'Spending'
+    
+        const layout = {
+            title: {{ chart_title | tojson | safe }},
+            xaxis: {
+                title: 'Month'
+            },
+            yaxis: {
+                title: 'Spending'
+            }
         };
-
+    
         Plotly.newPlot('spendingsCustChart', data, layout);
     </script>
 </body>

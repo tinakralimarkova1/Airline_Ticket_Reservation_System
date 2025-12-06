@@ -2,36 +2,176 @@
 <html lang="en">
 <head>
     <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
 
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+
+        /* Centered form container */
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 40px;
+        }
+
+        form {
+            background: #f8f8f8;
+            padding: 30px 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 380px;
+        }
+
+        form h2 {
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        form h3 {
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: normal;
+            color: #333;
+        }
+
+        form p {
+            margin: 10px 0 5px;
+            font-size: 14px;
+            color: #444;
+        }
+
+        form input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 12px;
+            border: 1px solid #aaa;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px 0;
+            background-color: rgb(54, 96, 180);
+            color: white;
+            font-size: 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: rgb(44, 80, 150);
+        }
+
+        /* Top nav bar */
+        nav {
+            background-color: rgb(54, 96, 180);
+            color: white;
+            padding: 14px 24px;
+        }
+
+        nav ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        /* Back link */
+        .back-link {
+            margin-top: 20px;
+            text-align: center;
+            padding: 30px;
+            background-color: #888df5;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .back-link a {
+            color: rgb(255, 255, 255);
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 
 <header>
 	<nav>
-		<div class="nav-logo">FS</div>
 		<ul class="nav-links">
 			<li><a href="/">Home</a></li>
 			<li><a href="/register">Register</a></li>
 			<li><a href="/login">Login</a></li>
-		  </ul>
+		</ul>
 	</nav>
 </header>
 
 <body>
     <div class="form-container">
-    <form action="/register_staff" method="POST">
-        <h2>Customer Register</h2>
-        <p>Create your account below:</p>
-        <input type="text" name="username" placeholder="Username" required/> </br>
-        <input type="password" name="password" placeholder="Password" required/></br>
-        <input type="text" name="first_name" placeholder="First Name" required/></br>
-        <input type="text" name="last_name" placeholder="Last Name" required/></br>
-        <input type="date" name="date_of_birth" placeholder="Date of Birth" required/></br>
-        <button type="submit">Register</button>
-        {% if error %}
-            <p class="error"><strong>Error:</strong> {{error}}</p>
-        {% endif %}
-    </form>
-    <a href="/register">Go Back</a>
+        <form action="/register_staff" method="POST">
+            <h2>Staff Register</h2>
+            <h3>Create your account below</h3>
+
+            <p>Username</p>
+            <input type="text" name="username" placeholder="Username" required/>
+
+            <p>Password</p>
+            <input type="password" name="password" placeholder="Password" required/>
+
+            <p>First Name</p>
+            <input type="text" name="first_name" placeholder="First Name" required/>
+
+            <p>Last Name</p>
+            <input type="text" name="last_name" placeholder="Last Name" required/>
+
+            <p>Date of Birth</p>
+            <input type="date" name="date_of_birth" required/>
+
+            <p>Airline</p>
+            <input type="text" name="works_for" placeholder="Airline" required/>
+
+            <p>Admin or Operator</p>
+            <select name="permissions" required>
+                <option value="admin">Admin</option>
+                <option value="operator">Operator</option>
+            </select>
+
+
+
+            <button type="submit">Register</button>
+
+            {% if error %}
+                <p class="error"><strong>Error:</strong> {{ error }}</p>
+            {% endif %}
+        </form>
+
+        <div class="back-link">
+            <a href="/register">← Go Back</a>
+        </div>
     </div>
 </body>
 </html>

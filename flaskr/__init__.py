@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, url_for, redirect, session
 import mysql.connector
-from datetime import date
+from datetime import date, datetime
 
 #Initialize the app from Flask
 app = Flask(__name__)
@@ -14,16 +14,25 @@ def get_db_connection():
         database='Airline_Reservation_System')
 
 ## helper functions for agent
+
+@app.after_request
+def add_no_cache_headers(response):
+    """
+    Prevent caching so that back/forward buttons do not show
+    logged-in pages after logout.
+    """
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 def require_agent(): 
     if session.get('user_type') != 'agent': 
         # redirect if not an agent to 
         return redirect(url_for('login_agent'))
     return None 
 
-def normalize_date(value):
-    if isinstance(value, date):
-        return value.strftime('%Y-%m-%d')
-    return value
+
 
 #Define a route to hello function
 @app.route('/', methods=['GET'])
@@ -223,7 +232,7 @@ def login_staff():
         cursor = conn.cursor()
 
         #query and fetching data
-        query = "SELECT username, password FROM airline_staff WHERE username = %s and password = SHA2(%s, 256)"
+        query = "SELECT username, password, permissions FROM airline_staff WHERE username = %s and password = SHA2(%s, 256)"
         cursor.execute(query, (username, password))
         data = cursor.fetchone()
         cursor.close()
@@ -234,6 +243,7 @@ def login_staff():
         if data:
             session['username'] = username
             session['user_type'] = 'staff'
+            session['permissions'] = data[2]
             return redirect(url_for('staff_home'))
         else:
             error = 'Invalid login or username'
@@ -281,6 +291,18 @@ def register_customer():
         if not all([email, name, password, building_number, street, city, state, phone_number, passport_number, passport_expiration_date, passport_country, date_of_birth]):
             error = "All fields are required"
             return render_template('registerCust.html', error=error)
+        if type(building_number) != int:
+            error = "Building number must be an integer"
+            return render_template('registerCust.html', error=error)
+        
+        if type(phone_number) != int:
+            error = "Phone number must be an integer"
+            return render_template('registerCust.html', error=error)
+        
+        if type(passport_number) != int:
+            error = "Passport number must be an integer"
+            return render_template('registerCust.html', error=error)
+        
     
 
 
@@ -355,16 +377,42 @@ def register_staff():
         first_name = request.form.get('first_name')
         last_name = request.form.get('last_name')
         date_of_birth = request.form.get('date_of_birth')
+        works_for = request.form.get('works_for')
+        permissions = request.form.get('permissions')
 
-
-        if not all([username, password, first_name, last_name, date_of_birth]):
+        # validate input
+        if not all([username, password, first_name, last_name, date_of_birth, works_for, permissions]):
             error = "All fields are required"
             return render_template('registerStaff.html', error=error)
+        
+        if permissions not in ['admin', 'operator']:
+            error = "Invalid permissions selected"
+            return render_template('registerStaff.html', error=error)
+        
+        if date_of_birth:
+            try:
+                datetime.strptime(date_of_birth, '%Y-%m-%d')
+            except ValueError:
+                error = "Invalid date of birth format"
+                return render_template('registerStaff.html', error=error)
+            
+        
     
 
 
         conn = get_db_connection()
         cursor = conn.cursor()
+
+        # check if airline exists
+        check_airline_query = "SELECT name FROM airline WHERE name = %s"
+        cursor.execute(check_airline_query, (works_for,))
+        airline_data = cursor.fetchone()
+
+        if not airline_data:
+            error = "Invalid airline name"
+            return render_template('registerStaff.html', error=error)
+        
+        # check if username already exists
 
         query = "SELECT username FROM airline_staff WHERE username = %s"
         cursor.execute(query, (username,))
@@ -375,9 +423,9 @@ def register_staff():
             return render_template('registerStaff.html', error=error)
         else:
             # Insert the new customer record
-            query = """INSERT INTO airline_staff (username,password, first_name, last_name, date_of_birth) 
-                       VALUES (%s, SHA2(%s, 256), %s, %s, %s)"""
-            cursor.execute(query, (username, password, first_name, last_name, date_of_birth))
+            query = """INSERT INTO airline_staff (username,password, first_name, last_name, date_of_birth, permissions, works_for) 
+                       VALUES (%s, SHA2(%s, 256), %s, %s, %s, %s, %s)"""
+            cursor.execute(query, (username, password, first_name, last_name, date_of_birth, permissions, works_for))
             conn.commit()
             cursor.close()
             conn.close()
@@ -546,35 +594,184 @@ def buy_cust():
 
         # You can redirect to a "my flights" page, or back to customer_home
         return redirect(url_for('customer_home'))
+    
+from datetime import date
 
-
-@app.route('/spendingCust', methods=['GET'])
+@app.route('/spendingCust', methods=['GET', 'POST'])
 def customer_spending():
     if 'username' not in session:
         return redirect(url_for('login_cust'))
     
-    # customer_email = session['username']
+    customer_email = session['username']
     
-    # conn = get_db_connection()
-    # cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
-    # query = """
-    # SELECT * FROM flight
-    # FROM purchases NATURAL JOIN ticket NATURAL JOIN flight
-    # WHERE customer_email = %s
-
-    # """
-    # cursor.execute(query, (customer_email,))
-    # data1 = cursor.fetchall()
-
-    # cursor.close()
-    # conn.close()
+    # ----- 1) Total spending in the last 12 months (always shown) -----
+    total_spending_sql = """
+        SELECT COALESCE(SUM(f.price), 0) AS total_spent
+        FROM purchases p
+        JOIN ticket t ON p.ticket_id = t.ticket_id
+        JOIN flight f ON t.for_ = f.flight_num
+        WHERE p.customer_email = %s
+          AND p.date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+    """
     
+    cursor.execute(total_spending_sql, (customer_email,))
+    row = cursor.fetchone()
+    total_spending_year = float(row[0] or 0)
 
+    # ----- 2) Default chart: last 6 months (what you already have) -----
+    today = date.today()
+    months = []
+    y = today.year
+    m = today.month
+    for _ in range(6):
+        months.append((y, m))        # (year, month)
+        m -= 1
+        if m == 0:
+            m = 12
+            y -= 1
+    months.reverse()                 # oldest first
 
+    # Query DB for spending grouped by year+month in that 6-month window
+    start_year, start_month = months[0]
+    start_date = date(start_year, start_month, 1)
+    end_date = today
 
-    # Later: query DB for this customer's spending
-    return render_template('spendingCust.html')
+    monthly_sql = """
+        SELECT 
+            YEAR(p.date) AS y,
+            MONTH(p.date) AS m,
+            COALESCE(SUM(f.price), 0) AS total_spent
+        FROM purchases p
+        JOIN ticket t ON p.ticket_id = t.ticket_id
+        JOIN flight f ON t.for_ = f.flight_num
+        WHERE p.customer_email = %s
+          AND p.date BETWEEN %s AND %s
+        GROUP BY y, m
+        ORDER BY y, m
+    """
+    cursor.execute(monthly_sql, (customer_email, start_date, end_date))
+    rows = cursor.fetchall()   # e.g. [(2025, 7, 120.0), (2025, 9, 300.0), ...]
+
+    spending_by_ym = {
+        (int(r[0]), int(r[1])): float(r[2] or 0)
+        for r in rows
+    }
+
+    default_month_numbers = []
+    default_month_spending = []
+    for (yy, mm) in months:
+        default_month_numbers.append(mm)
+        default_month_spending.append(spending_by_ym.get((yy, mm), 0.0))
+
+    # ----- 3) Custom range (if user submits dates) -----
+    is_custom = False
+    custom_total_spending = None
+    chart_title = "Spending per Month over the last 6 months"
+    chart_month_numbers = default_month_numbers
+    chart_month_spending = default_month_spending
+    start_date_value = ""
+    end_date_value = ""
+
+    if request.method == 'POST':
+        start_date_value = (request.form.get('start_date') or "").strip()
+        end_date_value = (request.form.get('end_date') or "").strip()
+
+        if start_date_value and end_date_value:
+            try:
+                start_d = datetime.strptime(start_date_value, "%Y-%m-%d").date()
+                end_d = datetime.strptime(end_date_value, "%Y-%m-%d").date()
+
+                # If reversed, swap
+                if end_d < start_d:
+                    start_d, end_d = end_d, start_d
+                    start_date_value, end_date_value = end_date_value, start_date_value
+
+                is_custom = True
+
+                # 3a) Total spending in custom range
+                custom_total_sql = """
+                    SELECT COALESCE(SUM(f.price), 0) AS total_spent
+                    FROM purchases p
+                    JOIN ticket t ON p.ticket_id = t.ticket_id
+                    JOIN flight f ON t.for_ = f.flight_num
+                    WHERE p.customer_email = %s
+                      AND p.date BETWEEN %s AND %s
+                """
+                cursor.execute(custom_total_sql, (customer_email, start_d, end_d))
+                row = cursor.fetchone()
+                custom_total_spending = float(row[0] or 0)
+
+                # 3b) Monthly breakdown for custom range
+                monthly_custom_sql = """
+                    SELECT 
+                        YEAR(p.date) AS y,
+                        MONTH(p.date) AS m,
+                        COALESCE(SUM(f.price), 0) AS total_spent
+                    FROM purchases p
+                    JOIN ticket t ON p.ticket_id = t.ticket_id
+                    JOIN flight f ON t.for_ = f.flight_num
+                    WHERE p.customer_email = %s
+                      AND p.date BETWEEN %s AND %s
+                    GROUP BY y, m
+                    ORDER BY y, m
+                """
+                cursor.execute(monthly_custom_sql, (customer_email, start_d, end_d))
+                rows = cursor.fetchall()
+
+                spending_by_ym_custom = {
+                    (int(r[0]), int(r[1])): float(r[2] or 0)
+                    for r in rows
+                }
+
+                # helper to generate all months between start_d and end_d (inclusive)
+                def iter_months(sd, ed):
+                    yy = sd.year
+                    mm = sd.month
+                    res = []
+                    while (yy < ed.year) or (yy == ed.year and mm <= ed.month):
+                        res.append((yy, mm))
+                        mm += 1
+                        if mm == 13:
+                            mm = 1
+                            yy += 1
+                    return res
+
+                all_months = iter_months(start_d, end_d)
+
+                chart_month_numbers = []
+                chart_month_spending = []
+                for (yy, mm) in all_months:
+                    chart_month_numbers.append(mm)
+                    chart_month_spending.append(
+                        spending_by_ym_custom.get((yy, mm), 0.0)
+                    )
+
+                chart_title = f"Spending per Month from {start_date_value} to {end_date_value}"
+
+            except ValueError:
+                # bad date format → just keep default chart
+                pass
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'spendingCust.html',
+        total_spending_year=total_spending_year,
+        # chart data (default or custom)
+        month_numbers=chart_month_numbers,
+        month_spending=chart_month_spending,
+        chart_title=chart_title,
+        # custom info
+        is_custom=is_custom,
+        custom_total_spending=custom_total_spending,
+        start_date_value=start_date_value,
+        end_date_value=end_date_value
+    )
+
 
 @app.route('/purchasesCust', methods=['GET', 'POST'])
 def customer_purchases():
@@ -637,9 +834,7 @@ def customer_purchases():
     cursor.execute(query2, tuple(params))
     data2 = cursor.fetchall()
 
-    print("DEBUG purchasesCust query2:", query2)
-    print("DEBUG purchasesCust params:", params)
-
+    
     cursor.close()
     conn.close()
 
@@ -871,7 +1066,7 @@ def staff_home():
 
 @app.route('/logout')
 def logout():
-    session.pop('username')
+    session.clear()
     return redirect('/')
 
 	
