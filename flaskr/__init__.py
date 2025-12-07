@@ -1436,7 +1436,7 @@ def authorize_agent():
 
 # 6. operator only operations 
 # 6.1 update the status of the flights 
-@app.route('update_status', methods=['GET', 'POST'])
+@app.route('/update_status', methods=['GET', 'POST'])
 def update_status(): 
     if 'username' not in session or session.get('permissions') != "Operator":
         return redirect(url_for('login_staff'))
