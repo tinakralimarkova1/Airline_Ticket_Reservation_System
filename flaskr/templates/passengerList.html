@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Passenger Lists – {{ airline }}</title>
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('admin_home') }}">Admin Home</a>
+        <a href="{{ url_for('default_view') }}">Upcoming Flights</a>
+        <a href="{{ url_for('staff_analytics') }}">Analytics</a>
+    </nav>
+
+    <h1>Passenger Lists – {{ airline }}</h1>
+
+    <table border="1" cellpadding="6" cellspacing="0">
+        <tr>
+            <th>Flight #</th>
+            <th>Departs</th>
+            <th>Arrives</th>
+            <th>Departure Date</th>
+            <th>Passenger Name</th>
+            <th>Passenger Email</th>
+        </tr>
+
+        {% for row in passengers %}
+        <tr>
+            <td>{{ row.flight_num }}</td>
+            <td>{{ row.departs }}</td>
+            <td>{{ row.arrives }}</td>
+            <td>{{ row.departure_date }}</td>
+
+            <!-- Clickable passenger name: goes to /customer_flights -->
+            <td>
+                <a href="{{ url_for('customer_flights') }}?customer_email={{ row.customer_email }}">
+                    {{ row.customer_name }}
+                </a>
+            </td>
+            <td>{{ row.customer_email }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
