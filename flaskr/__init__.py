@@ -215,7 +215,7 @@ def login_agent():
             return redirect(url_for('agent_home'))
         else:
             error = 'Invalid login or username'
-            return render_template('login_agent.html', error=error)
+            return render_template('loginAgent.html', error=error)
     
     return render_template('loginAgent.html')
 
@@ -840,10 +840,6 @@ def customer_purchases():
 
     return render_template('purchasedCust.html', data1=data1, data2=data2)
 
-
-
-
-
 ######## booking agent pages ##########
 
 ## 1. agent home page 
@@ -907,7 +903,7 @@ def agent_flights():
     cursor.close()
     conn.close() 
 
-    return render_template('agentFlights.html', flights=flights, from_airport=from_airport,to_airport=to_airport,start_date=normalize_date(start_date),end_date=normalize_date(end_date))
+    return render_template('agentFlights.html', flights=flights, from_airport=from_airport,to_airport=to_airport,start_date=start_date,end_date=end_date)
 
 # 3. search for flights and purchase tickets for customers 
 @app.route('/agent_search', methods=['GET', 'POST'])
@@ -919,7 +915,7 @@ def agent_search():
     
     agent_email = session.get('agent_email')
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(dictionary=True, buffered=True)
 
     message = None
     error = None
@@ -961,7 +957,7 @@ def agent_search():
                 cursor.execute(insert_purchase, (ticket_id, customer_email, agent_email))
                 conn.commit()
                 message = (
-                    f"Ticket #{ticket_id}, Flight {flight_num} has been purchased for "
+                    f"Ticket #{ticket_id}, Flight NO.{flight_num} has been purchased for "
                     f"{customer_email}."
                 )
         else:
@@ -979,7 +975,7 @@ def agent_search():
                f.departure_time, f.arrives, f.arrival_date, f.arrival_time,
                f.price, f.status_, f.use_ as airplane_id
         FROM flight as f JOIN ticket as t ON t.for_ = f.flight_num
-        WHERE t.ticket_id NOT IN (SELECT p.ticket_id FROM purchases as p)
+        WHERE f.status_ = "upcoming" AND t.ticket_id NOT IN (SELECT p.ticket_id FROM purchases as p) 
     """
     
     params = []
@@ -1004,7 +1000,7 @@ def agent_search():
     cursor.close()
     conn.close()
 
-    return render_template('agentSearch.html', flights=flights, departure_airport=departure_airport, arrival_airport=arrival_airport, departure_date=normalize_date(departure_date), message=message, error=error)
+    return render_template('agentSearch.html', flights=flights, departure_airport=departure_airport, arrival_airport=arrival_airport, departure_date=departure_date, message=message, error=error)
 
 # 4. access analytics 
 @app.route('/agent_analytics')
@@ -1021,43 +1017,83 @@ def agent_analytics():
     # 4.1 get commission totals for the last 30 days 
     # this assumes booking agent gets a commission of 10%
     monthly_commission_query = """ 
-        SELECT SUM(f.price * 0.1) 
+        SELECT COALESCE(SUM(f.price * 0.1),0) as total_commission
         FROM purchases as p  
         JOIN ticket as t ON p.ticket_id = t.ticket_id 
         JOIN flight as f ON t.for_ = f.flight_num 
         WHERE p.booking_agent_email = %s AND p.date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY )
     """
     cursor.execute(monthly_commission_query, (agent_email,))
+    monthly_commission = cursor.fetchone()
 
     # 4.2 average commission per ticket 
     avg_commission_query = """ 
-        SELECT AVG(f.price * 0.1)
+        SELECT COALESCE(AVG(f.price * 0.1),0) as avg_commission
         FROM purchases as p  
         JOIN ticket as t ON p.ticket_id = t.ticket_id 
         JOIN flight as f ON t.for_ = f.flight_num 
-        WHERE p.booking_agent_email = %s
+        WHERE p.booking_agent_email = %s AND p.date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY )
     """
     cursor.execute(avg_commission_query, (agent_email,))
+    avg_commission = cursor.fetchone()
 
     # 4.3 number of tickets sold 
     tixsold_query = """ 
-        SELECT COUNT(*)
+        SELECT COUNT(*) as tickets_sold
         FROM purchases as p  
         JOIN ticket as t ON p.ticket_id = t.ticket_id 
         JOIN flight as f ON t.for_ = f.flight_num 
-        WHERE p.booking_agent_email = %s
+        WHERE p.booking_agent_email = %s AND p.date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY )
     """
     cursor.execute(tixsold_query, (agent_email,))
+    tixsold = cursor.fetchone()
     
-    # 4.4 bar charts for top 5 customers by number of tickets (last 6 months)
-    # 4.5 bar charts for top 5 customers by commission (last year)
+    # 4.4 top 5 customers by number of tickets (last 6 months)
+    top5_tickets_query = """
+        SELECT p.customer_email, COUNT(t.ticket_id) as ticket_count
+        FROM purchases as p 
+        JOIN ticket as t ON p.ticket_id = t.ticket_id 
+        JOIN flight as f ON t.for_ = f.flight_num 
+        WHERE p.booking_agent_email = %s AND p.date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+        GROUP BY p.customer_email 
+        ORDER BY ticket_count DESC
+        LIMIT 5 
+    """
+    cursor.execute(top5_tickets_query, (agent_email,))
+    top5_customer_tickets = cursor.fetchall()
+
+    # 4.5 top 5 customers by commission (last year)
+    top5_commission_query = """
+        SELECT p.customer_email, SUM(f.price * 0.1) as total_commission
+        FROM purchases as p 
+        JOIN ticket as t ON p.ticket_id = t.ticket_id 
+        JOIN flight as f ON t.for_ = f.flight_num
+        WHERE p.booking_agent_email = %s AND p.date >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
+        GROUP BY p.customer_email
+        ORDER BY total_commission DESC 
+        LIMIT 5 
+    """
+    cursor.execute(top5_commission_query, (agent_email,))
+    top5_customers_commission = cursor.fetchall()
+
+    # convert decimals -> float/int for JSON
+    for row in top5_customer_tickets:
+        if row['ticket_count'] is not None:
+            row['ticket_count'] = int(row['ticket_count'])
+    for row in top5_customers_commission:
+        if row['total_commission'] is not None:
+            row['total_commission'] = float(row['total_commission'])
+
+    cursor.close()
+    conn.close()
     
+    return render_template('agentAnalytics.html', monthly_commission=monthly_commission, avg_commission=avg_commission, tixsold=tixsold, top5_customer_tickets=top5_customer_tickets,top5_customers_commission=top5_customers_commission )  
 
-    return render_template('agentAnalytics.html')  
-
-#airline staff
+##### airline staff ####
 
 @app.route('/staff_home')
+
+# 1. 
 def staff_home():
     return render_template('indexStaff.html')
 

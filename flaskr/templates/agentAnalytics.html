@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Agent Analytics</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js" charset="utf-8"></script>
+    <style>
+        body {
+            font-family: Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav {
+            background-color: rgb(54, 96, 180);
+            color: white;
+            text-align: left;
+            height: 50px;
+            padding: 14px 20px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+
+        nav a:hover {
+            color: rgb(100, 158, 19);
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 30px auto 60px auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            border: 2px solid #ccc;
+        }
+
+        h1 {
+            margin-top: 0;
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+        }
+
+        .stat-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            border: 3px solid purple;
+            border-radius: 8px;
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stat-label {
+            font-size: 18px;
+            line-height: 1.4;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .charts-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .chart-card {
+            flex: 1 1 48%;
+            border: 3px solid purple;
+            border-radius: 8px;
+            padding: 15px 15px 5px 15px;
+            min-width: 280px;
+        }
+
+        .chart-title {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 300px;
+        }
+
+        @media (max-width: 768px) {
+            .charts-row {
+                flex-direction: column;
+            }
+            .chart-card {
+                flex-basis: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<nav>
+    <a href="/">Home</a>
+    <a href="/login">Login</a>
+    <a href="/register">Register</a>
+</nav>
+
+<div class="container">
+    <h1>📊 ANALYTICS</h1>
+
+    <!-- Top three purple boxes -->
+    <div class="stat-cards">
+        <div class="stat-card">
+            <div class="stat-label">
+                Commission totals for<br>the last 30 days
+            </div>
+            <div class="stat-value">
+                ${{ "%.2f"|format(monthly_commission.total_commission or 0) }}
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">
+                Average commission per ticket<br>over the last 30 days
+            </div>
+            <div class="stat-value">
+                ${{ "%.2f"|format(avg_commission.avg_commission or 0) }}
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">
+                Number of tickets sold<br>over the last 30 days
+            </div>
+            <div class="stat-value">
+                {{ tixsold.tickets_sold or 0 }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom two bar charts -->
+    <div class="charts-row">
+        <div class="chart-card">
+            <div class="chart-title">
+                Top 5 customers by number of tickets (over last 6 months)
+            </div>
+            <div id="ticketsChart" class="chart-container"></div>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-title">
+                Top 5 customers by commission (over last year)
+            </div>
+            <div id="commissionChart" class="chart-container"></div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    // Data from Flask
+    const ticketCustLabels = {{ top5_customer_tickets | map(attribute='customer_email') | list | tojson | safe }};
+    const ticketCounts = {{ top5_customer_tickets | map(attribute='ticket_count') | list | tojson | safe }};
+
+    const commissionCustLabels = {{ top5_customers_commission | map(attribute='customer_email') | list | tojson | safe }};
+    const commissionTotals = {{ top5_customers_commission | map(attribute='total_commission') | list | tojson | safe }};
+
+    // Bar chart: top 5 customers by number of tickets
+    const ticketsData = [{
+        x: ticketCustLabels,
+        y: ticketCounts,
+        type: 'bar'
+    }];
+
+    const ticketsLayout = {
+        margin: { t: 20, l: 40, r: 10, b: 60 },
+        yaxis: { title: 'Tickets sold' },
+        xaxis: { automargin: true }
+    };
+
+    Plotly.newPlot('ticketsChart', ticketsData, ticketsLayout, {responsive: true});
+
+    // Bar chart: top 5 customers by commission
+    const commissionData = [{
+        x: commissionCustLabels,
+        y: commissionTotals,
+        type: 'bar'
+    }];
+
+    const commissionLayout = {
+        margin: { t: 20, l: 60, r: 10, b: 60 },
+        yaxis: { title: 'Total commission ($)' },
+        xaxis: { automargin: true }
+    };
+
+    Plotly.newPlot('commissionChart', commissionData, commissionLayout, {responsive: true});
+</script>
+
+</body>
+</html>
