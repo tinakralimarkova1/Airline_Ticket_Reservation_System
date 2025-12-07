@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Airport</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('admin_home') }}">Home</a>
+        <a href="{{ url_for('add_airport') }}">Add Airport</a>
+        <a href="{{ url_for('add_airplane') }}">Add Airplane</a>
+        <a href="{{ url_for('authorize_agent') }}">Authorize Agent</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </nav>
+
+    <div class="container">
+        <h1>Add a New Airport</h1>
+
+        {% if message %}
+            <p class="message">{{ message }}</p>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('add_airport') }}">
+            <label for="name">Airport Code (Name):</label>
+            <input type="text" id="name" name="name" required>
+
+            <label for="city">City:</label>
+            <input type="text" id="city" name="city" required>
+
+            <label for="country">Country:</label>
+            <input type="text" id="country" name="country" required>
+
+            <button type="submit">Add Airport</button>
+        </form>
+    </div>
+</body>
+</html>

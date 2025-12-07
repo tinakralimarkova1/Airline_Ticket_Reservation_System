@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ airline }} – Upcoming Flights (Next 30 Days)</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('admin_home') }}">Back</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </nav>
+
+    <div class="container">
+        <h1>{{ airline }} – Upcoming Flights (Next 30 Days)</h1>
+
+        {% if upcoming_flights %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Flight #</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Departure Date</th>
+                        <th>Departure Time</th>
+                        <th>Arrival Date</th>
+                        <th>Arrival Time</th>
+                        <th>Status</th>
+                        <th>Airplane ID</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in upcoming_flights %}
+                        <tr>
+                            <td>{{ f.flight_num }}</td>
+                            <td>{{ f.departs }}</td>
+                            <td>{{ f.arrives }}</td>
+                            <td>{{ f.departure_date }}</td>
+                            <td>{{ f.departure_time }}</td>
+                            <td>{{ f.arrival_date }}</td>
+                            <td>{{ f.arrival_time }}</td>
+                            <td>{{ f.status_ }}</td>
+                            <td>{{ f.use_ }}</td>
+                            <td>{{ f.price }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No upcoming flights for this airline in the next 30 days.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

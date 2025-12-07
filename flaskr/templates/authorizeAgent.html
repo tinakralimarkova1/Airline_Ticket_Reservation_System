@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Authorize Booking Agent – {{ airline }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('admin_home') }}">Home</a>
+        <a href="{{ url_for('add_airport') }}">Add Airport</a>
+        <a href="{{ url_for('add_airplane') }}">Add Airplane</a>
+        <a href="{{ url_for('authorize_agent') }}">Authorize Agent</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </nav>
+
+    <div class="container">
+        <h1>Authorize Booking Agents for {{ airline }}</h1>
+
+        {% if message %}
+            <p class="message">{{ message }}</p>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('authorize_agent') }}">
+            <label for="booking_agent_email">Select Booking Agent:</label>
+            <select id="booking_agent_email" name="booking_agent_email" required>
+                <option value="">-- Choose an Agent --</option>
+                {% for agent in all_agents %}
+                    <option value="{{ agent.email }}">{{ agent.email }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">Authorize Agent</button>
+        </form>
+
+        <h2>All Booking Agents</h2>
+        <ul>
+            {% for agent in all_agents %}
+                <li>{{ agent.email }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

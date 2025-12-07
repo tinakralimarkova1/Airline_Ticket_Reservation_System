@@ -227,12 +227,12 @@ def login_staff():
         username = request.form['username']
         password = request.form['password']
 
-        #connect to dp
+        #connect to db
         conn = get_db_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
         #query and fetching data
-        query = "SELECT username, password, permissions FROM airline_staff WHERE username = %s and password = SHA2(%s, 256)"
+        query = "SELECT username, password, works_for, permissions FROM airline_staff WHERE username = %s and password = SHA2(%s, 256)"
         cursor.execute(query, (username, password))
         data = cursor.fetchone()
         cursor.close()
@@ -240,17 +240,17 @@ def login_staff():
 
         #if data is found, username exists 
         if data:
-            session['username'] = data[username]
+            session['username'] = data['username']
             session['airline'] = data['works_for']
             session['permissions'] = data['permissions']
             
             # redirect staff depending on role 
-            if data['permissions'] == 'Admin': 
+            if data['permissions'] == 'admin': 
                 return redirect(url_for('admin_home'))
             else:
                 return redirect(url_for('operator_home'))
-        
-        return render_template('login_staff.html', error = "Invalid credentials")
+        return render_template('loginStaff.html', error = "Invalid credentials")
+    
     return render_template('loginStaff.html')
     
 #Register routes 
@@ -1108,7 +1108,7 @@ def default_view():
     upcoming_flights_query = """
         SELECT *
         FROM flight as f 
-        WHERE f.operated_by = %s AND f.status = 'upcoming' AND f.departure_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+        WHERE f.operated_by = %s AND f.status_ = 'upcoming' AND f.departure_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
     """
     cursor.execute(upcoming_flights_query, (airline,))
     upcoming_flights = cursor.fetchall()
@@ -1143,7 +1143,7 @@ def passenger_list():
     cursor.close()
     conn.close()
 
-    return render_template('passengerList.html', passengers=passengers, airline=airline, flight_num=flight_num)
+    return render_template('passengerList.html', passengers=passengers, airline=airline)
 
 # 3. check all flights taken by a specific customer on their airline 
 @app.route('/customer_flights', methods=['GET', 'POST'])
@@ -1173,7 +1173,7 @@ def customer_flights():
             JOIN ticket as t ON p.ticket_id = t.ticket_id 
             JOIN flight as f ON t.for_ = f.flight_num
             WHERE p.customer_email = %s AND f.operated_by = %s 
-            ORDER BY f.departure_date DESC, 
+            ORDER BY f.departure_date DESC
         """
         cursor.execute(customer_flights_query, (customer_email, airline))
         cust_flights = cursor.fetchall()
@@ -1298,8 +1298,9 @@ def staff_analytics():
     # 4.9 top 10 destinations for the last year 
     top10_destinations_year_query = """
         SELECT f.arrives as destination, COUNT(*) as tickets_sold 
-        FROM flight as f
-        JOIN ticket as t ON t.for_ = f.flight_num
+        FROM purchases AS p
+        JOIN ticket AS t ON p.ticket_id = t.ticket_id
+        JOIN flight AS f ON t.for_ = f.flight_num
         WHERE f.operated_by = %s AND f.departure_date >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
         GROUP BY f.arrives
         ORDER BY tickets_sold DESC 
@@ -1329,18 +1330,17 @@ def staff_analytics():
 # 5.1 add new airports and airplanes 
 @app.route('/add_airport', methods=['GET', 'POST'])
 def add_airport():
-    if 'username' not in session or session.get('permissions') != "Admin":
+    if 'username' not in session or session.get('permissions') != "admin":
         return redirect(url_for('login_staff'))
 
     message = None 
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
     if request.method == 'POST':
         name = request.form.get('name')
         city = request.form.get('city')
         country = request.form.get('country')
-
-        conn = get_db_connection()
-        cursor = conn.cursor()
 
         insert_airport_query = """
             INSERT INTO airport (name, city, country)
@@ -1362,43 +1362,39 @@ def add_airport():
 
 @app.route('/add_airplane', methods=['GET', 'POST'])
 def add_airplane():
-    if 'username' not in session or session.get('permissions') != "Admin":
+    if 'username' not in session or session.get('permissions') != "admin":
         return redirect(url_for('login_staff'))
     
     airline = session.get('airline')
     message = None 
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
     if request.method == 'POST':
         ID = request.form.get('airplane_id')
         seat_capacity = request.form.get('seat_capacity')
-
-        conn = get_db_connection()
-        cursor = conn.cursor()
 
         insert_airplane_query = """
             INSERT INTO airplane (ID, airline_name, seat_capacity)
             VALUES (%s, %s, %s)
         """
         try:
-            cursor.execute(insert_airplane_query, (ID, airline))
-            cursor.execute("UPDATE airplane SET seat_capacity = %s WHERE ID = %s AND airline_name = %s",
-                           (seat_capacity, ID, airline))
+            cursor.execute(insert_airplane_query, (ID, airline, seat_capacity))
             conn.commit()
             message = "Airplane added successfully!"
-
         except Exception as e:
             conn.rollback()
             message = f"Error adding airplane: {e}"
-    
-    cursor.close()
-    conn.close() 
 
+    cursor.close()
+    conn.close()
     return render_template('addAirplane.html', message=message)
+
 
 # 5.2 associate booking agents with the airline  
 @app.route('/authorize_agent', methods=['GET', 'POST'])
 def authorize_agent():
-    if 'username' not in session or session.get('permissions') != "Admin":
+    if 'username' not in session or session.get('permissions') != "admin":
         return redirect(url_for('login_staff'))
     
     airline = session.get('airline')
@@ -1438,7 +1434,7 @@ def authorize_agent():
 # 6.1 update the status of the flights 
 @app.route('/update_status', methods=['GET', 'POST'])
 def update_status(): 
-    if 'username' not in session or session.get('permissions') != "Operator":
+    if 'username' not in session or session.get('permissions') != "operator":
         return redirect(url_for('login_staff'))
     
     airline = session.get('airline')
@@ -1473,15 +1469,16 @@ def update_status():
 # 7. airline staff admin home page
 @app.route('/admin_home')
 def admin_home():
-    if 'username' not in session or session['permissions'] != "Admin":
+    if 'username' not in session or session['permissions'] != "admin":
         return redirect("/login_staff")
     
     airline = session.get('airline')
     return render_template('indexAdminStaff.html')
 
 # 8. airline staff operator home page 
+@app.route('/operator_home')
 def operator_home():
-    if 'username' not in session or session['permissions'] != "Operator":
+    if 'username' not in session or session['permissions'] != "operator":
         return redirect("/login_staff")
     
     return render_template('indexOperatorStaff.html')

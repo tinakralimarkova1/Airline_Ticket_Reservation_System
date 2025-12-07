@@ -15,7 +15,7 @@
             background-color: rgb(54, 96, 180);
             color: white;
             height: 50px;
-            padding: 14px 20px;
+            padding: 14px 24px;
             display: flex;
             align-items: center;
             gap: 20px;
@@ -24,7 +24,7 @@
         nav a {
             color: white;
             text-decoration: none;
-            font-size: 14px;
+            font-size: 16px;
         }
 
         nav a:hover {
@@ -95,16 +95,16 @@
 <body>
 
 <nav>
-    <a href="{{ url_for('admin_home') }}">Admin Home</a>
-    <a href="{{ url_for('default_view') }}">Upcoming Flights</a>
-    <a href="{{ url_for('staff_analytics') }}">Analytics</a>
-    <a href="{{ url_for('logout') }}">Logout</a>
+    <li><a href="/">Home</a></li>
+    <li><a href="/login">Login</a></li>
+    <li><a href="/register">Register</a></li>
+    
 </nav>
 
 <div class="page-container">
-    <h1>Admin Dashboard – {{ airline }}</h1>
+    <h1>Welcome back, Admin!</h1>
     <p class="subtitle">
-        Choose an action below to manage flights, customers, and airline data.
+        What would you like to do today?
     </p>
 
     <div class="card-grid">
@@ -112,7 +112,7 @@
         <a class="card-link" href="{{ url_for('default_view') }}">
             <div class="card">
                 <h2>View Upcoming Flights</h2>
-                <p>See all flights operated by this airline in the next 30 days.</p>
+                <p>See all flights operated by your airline in the next 30 days</p>
             </div>
         </a>
 
@@ -120,7 +120,7 @@
         <a class="card-link" href="{{ url_for('passenger_list') }}">
             <div class="card">
                 <h2>Passenger Lists</h2>
-                <p>View passengers for flights, and click a passenger to see all their trips.</p>
+                <p>View passengers for different flights</p>
             </div>
         </a>
 
@@ -128,7 +128,7 @@
         <a class="card-link" href="{{ url_for('staff_analytics') }}">
             <div class="card">
                 <h2>Staff Analytics</h2>
-                <p>Top agents, frequent customers, tickets per month, delays, and destinations.</p>
+                <p>Top agents, frequent customers, tickets per month, etc.</p>
             </div>
         </a>
 
@@ -136,7 +136,7 @@
         <a class="card-link" href="{{ url_for('add_airport') }}">
             <div class="card">
                 <h2>Add Airport</h2>
-                <p>Register a new airport in the system.</p>
+                <p>Register a new airport in the system</p>
             </div>
         </a>
 
@@ -144,7 +144,7 @@
         <a class="card-link" href="{{ url_for('add_airplane') }}">
             <div class="card">
                 <h2>Add Airplane</h2>
-                <p>Add an airplane and its seat capacity for this airline.</p>
+                <p>Add an airplane for this airline</p>
             </div>
         </a>
 
@@ -152,7 +152,7 @@
         <a class="card-link" href="{{ url_for('authorize_agent') }}">
             <div class="card">
                 <h2>Authorize Booking Agents</h2>
-                <p>Associate booking agents with this airline so they can sell its flights.</p>
+                <p>Associate booking agents with this airline so they can sell its flights</p>
             </div>
         </a>
     </div>
