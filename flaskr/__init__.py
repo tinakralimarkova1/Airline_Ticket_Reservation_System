@@ -2,10 +2,10 @@ from flask import Flask, render_template, request, url_for, redirect, session
 import mysql.connector
 from datetime import date, datetime
 
-#Initialize the app from Flask
+# Initialize the app from Flask
 app = Flask(__name__)
 
-#Configure MySQL
+# Configure MySQL
 def get_db_connection():
 	return mysql.connector.connect(
 		host='localhost',
@@ -24,7 +24,7 @@ def add_no_cache_headers(response):
     response.headers["Expires"] = "0"
     return response
 
-#Define a route to hello function
+# Define a route to hello function
 @app.route('/', methods=['GET'])
 def index():
     origin = request.args.get('origin', '').strip()
@@ -321,9 +321,6 @@ def register_customer():
 
             return redirect(url_for('login_cust'))  
 
-
-
-
     return render_template('registerCust.html')
 
 @app.route('/register_agent', methods=['GET', 'POST'])
@@ -391,9 +388,6 @@ def register_staff():
                 return render_template('registerStaff.html', error=error)
             
         
-    
-
-
         conn = get_db_connection()
         cursor = conn.cursor()
 
@@ -428,7 +422,7 @@ def register_staff():
 
     return render_template('registerStaff.html')
 
-#customer 
+##### customer ####
 @app.route('/customer_home', methods=['GET'])
 def customer_home():
     if 'username' not in session:
@@ -463,7 +457,7 @@ def customer_home():
     -- subquery: count available tickets per flight
     JOIN (
         SELECT
-            t.for_ AS flight_num,        -- ✅ this links tickets to flights
+            t.for_ AS flight_num,        -- links tickets to flights
             COUNT(*) AS available_tickets
         FROM ticket AS t
         LEFT JOIN purchases AS p
@@ -504,23 +498,19 @@ def customer_home():
 
     return render_template(
         'indexCust.html',
-        name=session.get('name'),
+        name= "Customer",
         data=data
     )
 
 
 @app.route('/buy_cust', methods=['GET', 'POST'])
 def buy_cust():
-    # Must be logged in
     if 'username' not in session:
         return redirect(url_for('login_cust'))
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)   # dictionary=True gives column names
+    cursor = conn.cursor(dictionary=True)   
 
-    # ---------------------------------
-    # GET → Show the purchase page
-    # ---------------------------------
     if request.method == 'GET':
         flight_num = request.args.get('flight_num')
 
@@ -544,17 +534,14 @@ def buy_cust():
             customer_email=session['username']
         )
 
-    # ---------------------------------
-    # POST → Actually buy the ticket
-    # ---------------------------------
+  
     if request.method == 'POST':
         customer_email = session['username']
-        # If you later support agents, you can pass this in the form; for now None
         agent_email = request.form.get('agent_email') or None
         flight_num = request.form.get('flight_num')
 
-        # 1) Find an available ticket for this flight
-        cursor = conn.cursor()  # simple fetch, no need for dict here
+        # Find an available ticket for this flight
+        cursor = conn.cursor() 
         cursor.execute("""
             SELECT t.ticket_id
             FROM ticket AS t
@@ -575,8 +562,8 @@ def buy_cust():
 
         ticket_id = row[0]
 
-        # 2) Insert into purchases (date = today using CURDATE())
-        #    You can also use NOW() if you want date+time
+        # Insert into purchases 
+       
         cursor.execute("""
             INSERT INTO purchases (customer_email, booking_agent_email, ticket_id, date)
             VALUES (%s, %s, %s, CURDATE())
@@ -586,10 +573,8 @@ def buy_cust():
         cursor.close()
         conn.close()
 
-        # You can redirect to a "my flights" page, or back to customer_home
         return redirect(url_for('customer_home'))
     
-from datetime import date
 
 @app.route('/spendingCust', methods=['GET', 'POST'])
 def customer_spending():
@@ -601,7 +586,7 @@ def customer_spending():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # ----- 1) Total spending in the last 12 months (always shown) -----
+    #  Total spending in the last 12 months 
     total_spending_sql = """
         SELECT COALESCE(SUM(f.price), 0) AS total_spent
         FROM purchases p
@@ -615,7 +600,7 @@ def customer_spending():
     row = cursor.fetchone()
     total_spending_year = float(row[0] or 0)
 
-    # ----- 2) Default chart: last 6 months (what you already have) -----
+    #  Default chart: last 6 months 
     today = date.today()
     months = []
     y = today.year
@@ -628,7 +613,6 @@ def customer_spending():
             y -= 1
     months.reverse()                 # oldest first
 
-    # Query DB for spending grouped by year+month in that 6-month window
     start_year, start_month = months[0]
     start_date = date(start_year, start_month, 1)
     end_date = today
@@ -647,7 +631,7 @@ def customer_spending():
         ORDER BY y, m
     """
     cursor.execute(monthly_sql, (customer_email, start_date, end_date))
-    rows = cursor.fetchall()   # e.g. [(2025, 7, 120.0), (2025, 9, 300.0), ...]
+    rows = cursor.fetchall()   
 
     spending_by_ym = {
         (int(r[0]), int(r[1])): float(r[2] or 0)
@@ -660,7 +644,7 @@ def customer_spending():
         default_month_numbers.append(mm)
         default_month_spending.append(spending_by_ym.get((yy, mm), 0.0))
 
-    # ----- 3) Custom range (if user submits dates) -----
+    # custom range (if user submits dates) 
     is_custom = False
     custom_total_spending = None
     chart_title = "Spending per Month over the last 6 months"
@@ -685,7 +669,7 @@ def customer_spending():
 
                 is_custom = True
 
-                # 3a) Total spending in custom range
+                # Total spending in custom range
                 custom_total_sql = """
                     SELECT COALESCE(SUM(f.price), 0) AS total_spent
                     FROM purchases p
@@ -698,7 +682,7 @@ def customer_spending():
                 row = cursor.fetchone()
                 custom_total_spending = float(row[0] or 0)
 
-                # 3b) Monthly breakdown for custom range
+                # Monthly breakdown for custom range
                 monthly_custom_sql = """
                     SELECT 
                         YEAR(p.date) AS y,
@@ -746,7 +730,6 @@ def customer_spending():
                 chart_title = f"Spending per Month from {start_date_value} to {end_date_value}"
 
             except ValueError:
-                # bad date format → just keep default chart
                 pass
 
     cursor.close()
@@ -755,7 +738,7 @@ def customer_spending():
     return render_template(
         'spendingCust.html',
         total_spending_year=total_spending_year,
-        # chart data (default or custom)
+        # chart data 
         month_numbers=chart_month_numbers,
         month_spending=chart_month_spending,
         chart_title=chart_title,
@@ -777,7 +760,7 @@ def customer_purchases():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # ---------- data1: upcoming purchased flights ----------
+    # upcoming purchased flights 
     query = """
         SELECT purchases.ticket_id, operated_by, flight_num, departure_date,
                departure_time, arrival_date, arrival_time, status_, arrives, departs
@@ -789,7 +772,7 @@ def customer_purchases():
     cursor.execute(query, (customer_email,))
     data1 = cursor.fetchall()
 
-    # ---------- data2: all purchased flights (optionally filtered) ----------
+    # all purchased flights
     query2 = """
         SELECT purchases.ticket_id, operated_by, flight_num, departure_date,
                departure_time, arrival_date, arrival_time, status_, arrives, departs
@@ -802,7 +785,6 @@ def customer_purchases():
     params = [customer_email]
 
     if request.method == 'POST':
-        # 🔹 get values from the form body, not from args
         start_date = request.form.get('start_date', '').strip()
         end_date = request.form.get('end_date', '').strip()
         origin = request.form.get('origin', '').strip()
@@ -824,7 +806,6 @@ def customer_purchases():
             query2 += " AND arrives = %s"
             params.append(destination)
 
-    # For GET, we just use the base query2 with only customer_email
     cursor.execute(query2, tuple(params))
     data2 = cursor.fetchall()
 
@@ -1643,8 +1624,6 @@ def logout():
 
 	
 app.secret_key = 'some key that you will never guess'
-#Run the app on localhost port 5000
-#debug = True -> you don't have to restart flask
 #for changes to go through, TURN OFF FOR PRODUCTION
 if __name__ == "__main__":
 	app.run('127.0.0.1', 5000, debug = True)
