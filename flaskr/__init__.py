@@ -869,19 +869,23 @@ def agent_flights():
         SELECT f.flight_num, f.operated_by AS airline_name, f.departs, f.departure_date, 
                f.departure_time, f.arrives, f.arrival_date, f.arrival_time, f.price, f.status_, 
                f.use_ AS airplane_id, p.customer_email, p.date
-        FROM flight as f, ticket as t, purchases as p 
-        WHERE p.booking_agent_email = %s AND p.ticket_id = t.ticket_id AND t.for_= f.flight_num 
+        FROM purchases AS p
+        JOIN ticket AS t ON p.ticket_id = t.ticket_id
+        JOIN flight AS f ON t.for_ = f.flight_num
+        JOIN airport AS a_depart ON f.departs = a_depart.name
+        JOIN airport AS a_arrive ON f.arrives = a_arrive.name
+        WHERE p.booking_agent_email = %s
     """
 
     params = [agent_email]
 
     if from_airport:
-        viewpur_query += " AND f.departs = %s"
-        params.append(from_airport)
+        viewpur_query += " AND (f.departs = %s OR a_depart.host = %s)"
+        params.extend([from_airport, from_airport])
 
     if to_airport:
-        viewpur_query += " AND f.arrives = %s"
-        params.append(to_airport)
+        viewpur_query += " AND (f.arrives = %s OR a_arrive.host = %s)"
+        params.extend([to_airport, to_airport])
 
     if start_date:
         viewpur_query += " AND f.departure_date >= %s"
@@ -980,19 +984,22 @@ def agent_search():
         SELECT f.flight_num, f.operated_by as airline_name, f.departs, f.departure_date, 
                f.departure_time, f.arrives, f.arrival_date, f.arrival_time,
                f.price, f.status_, f.use_ as airplane_id
-        FROM flight as f JOIN ticket as t ON t.for_ = f.flight_num
+        FROM ticket as t
+        JOIN flight as f ON t.for_ = f.flight_num
+        JOIN airport AS a_depart ON f.departs = a_depart.name
+        JOIN airport AS a_arrive ON f.arrives = a_arrive.name
         WHERE f.status_ = "upcoming" AND t.ticket_id NOT IN (SELECT p.ticket_id FROM purchases as p) 
     """
     
     params = []
     
     if departure_airport:
-        search_query += " AND f.departs = %s"
-        params.append(departure_airport)
+        search_query += " AND (f.departs = %s OR a_depart.host = %s)"
+        params.extend([departure_airport, departure_airport])
 
     if arrival_airport:
-        search_query += " AND f.arrives = %s"
-        params.append(arrival_airport)
+        search_query += " AND (f.arrives = %s OR a_arrive.host = %s)"
+        params.extend([arrival_airport, arrival_airport])
 
     if departure_date:
         search_query += " AND f.departure_date = %s"
