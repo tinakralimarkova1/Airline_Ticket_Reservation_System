@@ -224,22 +224,22 @@
                 </div>
 
                 <div class="filter-group">
-                    <label for="departure_from">Departure from</label>
+                    <label for="start_date">Start date</label>
                     <input
                         type="date"
-                        id="departure_from"
-                        name="departure_from"
-                        value="{{ request.args.get('departure_from', '') }}"
+                        id="start_date"
+                        name="start_date"
+                        value="{{ request.args.get('start_date', '') }}"
                     />
                 </div>
 
                 <div class="filter-group">
-                    <label for="departure_to">Departure to</label>
+                    <label for="end_date">End date</label>
                     <input
                         type="date"
-                        id="departure_to"
-                        name="departure_to"
-                        value="{{ request.args.get('departure_to', '') }}"
+                        id="end_date"
+                        name="end_date"
+                        value="{{ request.args.get('end_date', '') }}"
                     />
                 </div>
             </div>

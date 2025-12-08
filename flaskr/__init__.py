@@ -13,8 +13,6 @@ def get_db_connection():
         password='',
         database='Airline_Reservation_System')
 
-## helper functions for agent
-
 @app.after_request
 def add_no_cache_headers(response):
     """
@@ -25,14 +23,6 @@ def add_no_cache_headers(response):
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
     return response
-
-def require_agent(): 
-    if session.get('user_type') != 'agent': 
-        # redirect if not an agent to 
-        return redirect(url_for('login_agent'))
-    return None 
-
-
 
 #Define a route to hello function
 @app.route('/', methods=['GET'])
@@ -848,19 +838,22 @@ def customer_purchases():
 ## 1. agent home page 
 @app.route('/agent_home')
 def agent_home():
+
     # only accessable if logged in as an agent already 
-    redirect_or_none = require_agent()
-    if redirect_or_none:
-        return redirect_or_none
+    if session.get('user_type') != 'agent': 
+        # redirect if not an agent to 
+        return redirect(url_for('login_agent'))
     
     return render_template('indexAgent.html')
 
 # 2. show flights that booking agent has prchased for a customer
 @app.route('/agent_flights')
 def agent_flights():
-    redirect_or_none = require_agent()
-    if redirect_or_none: 
-        return redirect_or_none 
+    
+    # only accessable if logged in as an agent already 
+    if session.get('user_type') != 'agent': 
+        # redirect if not an agent to 
+        return redirect(url_for('login_agent'))
     
     agent_email = session.get('agent_email')
     conn = get_db_connection()
@@ -912,9 +905,10 @@ def agent_flights():
 @app.route('/agent_search', methods=['GET', 'POST'])
 def agent_search():
     
-    redirect_or_none = require_agent()
-    if redirect_or_none:
-        return redirect_or_none
+    # only accessable if logged in as an agent already 
+    if session.get('user_type') != 'agent': 
+        # redirect if not an agent to 
+        return redirect(url_for('login_agent'))
     
     agent_email = session.get('agent_email')
     conn = get_db_connection()
@@ -1009,9 +1003,10 @@ def agent_search():
 @app.route('/agent_analytics')
 def agent_analytics(): 
     
-    redirect_or_none = require_agent()
-    if redirect_or_none:
-        return redirect_or_none
+    # only accessable if logged in as an agent already 
+    if session.get('user_type') != 'agent': 
+        # redirect if not an agent to 
+        return redirect(url_for('login_agent'))
     
     agent_email = session.get('agent_email')
     conn = get_db_connection()
@@ -1105,18 +1100,42 @@ def default_view():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
+    # read filters (date ranges and routes)
+    from_airport = request.args.get('from_airport') or None
+    to_airport   = request.args.get('to_airport') or None
+    start_date   = request.args.get('start_date') or None
+    end_date     = request.args.get('end_date') or None
+
     upcoming_flights_query = """
         SELECT *
         FROM flight as f 
         WHERE f.operated_by = %s AND f.status_ = 'upcoming' AND f.departure_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
     """
-    cursor.execute(upcoming_flights_query, (airline,))
+    params = [airline]
+
+    if from_airport:
+        upcoming_flights_query += " AND f.departs = %s"
+        params.append(from_airport)
+
+    if to_airport:
+        upcoming_flights_query += " AND f.arrives = %s"
+        params.append(to_airport)
+
+    if start_date:
+        upcoming_flights_query += " AND f.departure_date >= %s"
+        params.append(start_date)
+
+    if end_date:
+        upcoming_flights_query += " AND f.departure_date <= %s"
+        params.append(end_date)
+
+    cursor.execute(upcoming_flights_query, tuple(params))
     upcoming_flights = cursor.fetchall()
 
     cursor.close()
     conn.close()
 
-    return render_template('defaultViewStaff.html', upcoming_flights=upcoming_flights, airline=airline)
+    return render_template('defaultViewStaff.html', upcoming_flights=upcoming_flights, airline=airline, from_airport=from_airport,to_airport=to_airport,start_date=start_date,end_date=end_date)
 
 # 2. passenger lists for flights 
 @app.route('/passenger_list')
@@ -1340,14 +1359,17 @@ def add_airport():
     if request.method == 'POST':
         name = request.form.get('name')
         city = request.form.get('city')
-        country = request.form.get('country')
+
+        # insert city if it does not exist before inserting airport 
+        insert_city_query = "INSERT IGNORE INTO city (name) VALUES (%s)" # ignore so it ignores the duplicate if it exists 
+        cursor.execute(insert_city_query, (city,))
 
         insert_airport_query = """
-            INSERT INTO airport (name, city, country)
-            VALUES (%s, %s, %s)
+            INSERT INTO airport (name, host)
+            VALUES (%s, %s)
         """
         try:
-            cursor.execute(insert_airport_query, (name, city, country))
+            cursor.execute(insert_airport_query, (name, city))
             conn.commit()
             message = "Airport added successfully!"
 
@@ -1375,11 +1397,11 @@ def add_airplane():
         seat_capacity = request.form.get('seat_capacity')
 
         insert_airplane_query = """
-            INSERT INTO airplane (ID, airline_name, seat_capacity)
+            INSERT INTO airplane (ID, seat_capacity, owned_by)
             VALUES (%s, %s, %s)
         """
         try:
-            cursor.execute(insert_airplane_query, (ID, airline, seat_capacity))
+            cursor.execute(insert_airplane_query, (ID, seat_capacity, airline))
             conn.commit()
             message = "Airplane added successfully!"
         except Exception as e:
@@ -1390,8 +1412,138 @@ def add_airplane():
     conn.close()
     return render_template('addAirplane.html', message=message)
 
+# 5.2 create flights 
+@app.route('/add_flight', methods=['GET', 'POST'])
+def add_flight():
 
-# 5.2 associate booking agents with the airline  
+    if 'username' not in session or session.get('permissions') != "admin":
+        return redirect(url_for('login_staff'))
+
+    airline = session.get('airline')
+    message = None
+    error = None
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # for the GET form: show all airports + all airplanes for current airline
+    airports = []
+    airplanes = []
+
+    # load airports 
+    get_airports_query = "SELECT name FROM airport ORDER BY name"
+    cursor.execute(get_airports_query)
+    airports = [row['name'] for row in cursor.fetchall()]
+
+    # load airplanes 
+    get_airplanes_query = """
+        SELECT ID, seat_capacity
+        FROM airplane
+        WHERE owned_by = %s
+        ORDER BY ID
+    """
+    cursor.execute(get_airplanes_query, (airline,))
+    airplanes = cursor.fetchall()   
+
+    if request.method == 'POST':
+        flight_num       = request.form.get('flight_num')
+        departs          = request.form.get('departs')
+        arrives          = request.form.get('arrives')
+        departure_date   = request.form.get('departure_date')   
+        departure_time   = request.form.get('departure_time')  
+        arrival_date     = request.form.get('arrival_date')
+        arrival_time     = request.form.get('arrival_time')
+        price            = request.form.get('price')
+        status_          = request.form.get('status_') 
+        airplane_id      = request.form.get('airplane_id')     
+
+        # if missing a field 
+        if not all([flight_num, departs, arrives,
+                    departure_date, departure_time,
+                    arrival_date, arrival_time,
+                    price, airplane_id]):
+            error = "All fields are required"
+        
+        else:
+            try:
+                # check airplane exists and belongs to this airline and get seat_capacity
+                get_seat_capacity_query = """
+                    SELECT seat_capacity
+                    FROM airplane
+                    WHERE ID = %s AND owned_by = %s
+                """
+                cursor.execute(get_seat_capacity_query, (airplane_id, airline))
+                row = cursor.fetchone()
+                
+                if not row:
+                    error = "Invalid airplane selected for this airline"
+                
+                else:
+                    seat_capacity = int(row['seat_capacity'] or 0)
+                    if seat_capacity <= 0:
+                        error = "Selected airplane has invalid seat capacity"
+                    else:
+                        # use one transaction for flight + tickets
+                        cursor.execute("SET autocommit = 0")
+
+                        # insert flight
+                        insert_flight_query = """
+                            INSERT INTO flight (
+                                flight_num,
+                                price,
+                                status_,
+                                departure_date,
+                                departure_time,
+                                arrival_date,
+                                arrival_time,
+                                operated_by,
+                                use_,
+                                departs,
+                                arrives
+                            )
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """
+                        cursor.execute(insert_flight_query, (
+                            flight_num,
+                            price,
+                            status_,
+                            departure_date,
+                            departure_time,
+                            arrival_date,
+                            arrival_time,
+                            airline,       # operated_by
+                            airplane_id,   # use_
+                            departs,
+                            arrives
+                        ))
+
+                        # get the next ticket id
+                        get_max_id_query = "SELECT COALESCE(MAX(ticket_id), 0) as max_id FROM ticket"
+                        cursor.execute(get_max_id_query)
+                        row = cursor.fetchone()
+                        next_ticket_id = (row['max_id'] or 0) + 1
+
+                        # insert tickets 
+                        insert_ticket_query = "INSERT INTO ticket (ticket_id, for_) VALUES (%s, %s)"
+                        for i in range(seat_capacity):
+                            cursor.execute(insert_ticket_query, (next_ticket_id + i, flight_num,))
+
+                        conn.commit()
+                        message = (
+                            f"Flight {flight_num} created with {seat_capacity} tickets."
+                        )
+            except Exception as e:
+                conn.rollback()
+                error = f"Error creating flight: {e}"
+            finally:
+                cursor.execute("SET autocommit = 1")
+
+    cursor.close()
+    conn.close()
+
+    return render_template('addFlight.html', airline=airline, airports=airports, airplanes=airplanes, message=message, error=error)
+
+# 5.3 associate booking agents with the airline  
 @app.route('/authorize_agent', methods=['GET', 'POST'])
 def authorize_agent():
     if 'username' not in session or session.get('permissions') != "admin":
