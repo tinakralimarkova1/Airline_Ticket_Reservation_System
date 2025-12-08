@@ -946,17 +946,26 @@ def agent_search():
             else:
                 ticket_id = row['ticket_id']
                 
-                # insert into purchases
-                insert_purchase = """
-                    INSERT INTO purchases (ticket_id, customer_email, booking_agent_email, date)
-                    VALUES (%s, %s, %s, CURDATE())
-                """
-                cursor.execute(insert_purchase, (ticket_id, customer_email, agent_email))
-                conn.commit()
-                message = (
-                    f"Ticket #{ticket_id}, Flight NO.{flight_num} has been purchased for "
-                    f"{customer_email}."
-                )
+                # check if customer exists
+                check_customer_query = "SELECT 1 FROM customer WHERE email = %s"
+                cursor.execute(check_customer_query, (customer_email, ))
+                customer_exists = cursor.fetchone()
+                
+                if not customer_exists: 
+                    error = "Customer doesn't exist in the system, please ask them to register first"
+                
+                else: 
+                    # insert into purchases if customer exists 
+                    insert_purchase = """
+                        INSERT INTO purchases (ticket_id, customer_email, booking_agent_email, date)
+                        VALUES (%s, %s, %s, CURDATE())
+                    """
+                    cursor.execute(insert_purchase, (ticket_id, customer_email, agent_email))
+                    conn.commit()
+                    message = (
+                        f"Ticket #{ticket_id}, Flight NO.{flight_num} has been purchased for "
+                        f"{customer_email}."
+                    )
         else:
             error = "You are not allowed to book flights for this airline"
 
