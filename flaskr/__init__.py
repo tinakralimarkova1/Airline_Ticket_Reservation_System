@@ -150,6 +150,7 @@ def login():
 
 @app.route('/login_cust', methods=['GET', 'POST'])
 def login_cust():
+
     if request.method == 'POST':
 
         #user input 
@@ -284,18 +285,18 @@ def register_customer():
         if not all([email, name, password, building_number, street, city, state, phone_number, passport_number, passport_expiration_date, passport_country, date_of_birth]):
             error = "All fields are required"
             return render_template('registerCust.html', error=error)
-        if type(building_number) != int:
+        if not building_number.isdigit():
             error = "Building number must be an integer"
             return render_template('registerCust.html', error=error)
-        
-        if type(phone_number) != int:
+
+        if not phone_number.isdigit():
             error = "Phone number must be an integer"
             return render_template('registerCust.html', error=error)
-        
-        if type(passport_number) != int:
+
+        if not passport_number.isdigit():
             error = "Passport number must be an integer"
             return render_template('registerCust.html', error=error)
-        
+
     
 
 
