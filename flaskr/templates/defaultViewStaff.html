@@ -1,55 +1,303 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>{{ airline }} – Upcoming Flights (Next 30 Days)</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <meta charset="UTF-8" />
+    <title>Upcoming Flights – Staff</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <style>
+        body {
+            margin: 0;
+            font-family: "Verdana", sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        /* Top nav bar */
+        nav {
+            background-color: rgb(54, 96, 180);
+            color: white;
+            padding: 14px 24px;
+        }
+
+        nav ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+        nav a:hover { text-decoration: underline; }
+
+        .page-container {
+            max-width: 1200px;
+            margin: 20px auto 40px auto;
+            padding: 0 16px;
+        }
+
+        h1 {
+            margin-top: 10px;
+            margin-bottom: 4px;
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 16px;
+            font-weight: normal;
+            color: #555;
+        }
+
+        /* Filter card */
+        .filter-card {
+            border: 2px solid #f97373;
+            border-radius: 8px;
+            background-color: white;
+            padding: 16px 18px;
+            margin-top: 20px;
+        }
+
+        .filter-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 16px;
+        }
+
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: flex-end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 180px;
+            flex: 1;
+        }
+
+        .filter-group label {
+            font-size: 12px;
+            margin-bottom: 2px;
+        }
+
+        .filter-group input {
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-apply {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            background-color: #fb7185;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-apply:hover {
+            background-color: #f97373;
+        }
+
+        .btn-clear {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background-color: #f3f3f3;
+            color: #444;
+            cursor: pointer;
+        }
+
+        .btn-clear:hover {
+            background-color: #e4e4e4;
+        }
+
+        .btn-clear a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        /* Table card */
+        .table-card {
+            border: 2px solid #f97373;
+            border-radius: 16px;
+            background-color: #fff5f5;
+            margin-top: 30px;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #ffffff;
+        }
+
+        thead {
+            background-color: #ffe3e3;
+        }
+
+        th, td {
+            padding: 10px 8px;
+            text-align: center;
+            border-bottom: 1px solid #f5c2c2;
+            font-size: 14px;
+        }
+
+        th {
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) td {
+            background-color: #fff8f8;
+        }
+
+        .empty-message {
+            padding: 20px;
+            font-style: italic;
+            color: #777;
+        }
+
+        @media (max-width: 768px) {
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
 </head>
 <body>
     <nav>
-        <a href="{{ url_for('admin_home') }}">Back</a>
-        <a href="{{ url_for('logout') }}">Logout</a>
+        <a href="/">Home</a>
+        <a href="/login">Login</a>
+        <a href="/register">Register</a>
     </nav>
 
-    <div class="container">
-        <h1>{{ airline }} – Upcoming Flights (Next 30 Days)</h1>
+    <div class="page-container">
+        <h1>UPCOMING FLIGHTS (next 30 Days)</h1>
+        <h2>Airline: {{ airline }}</h2>
 
-        {% if upcoming_flights %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Flight #</th>
-                        <th>From</th>
-                        <th>To</th>
-                        <th>Departure Date</th>
-                        <th>Departure Time</th>
-                        <th>Arrival Date</th>
-                        <th>Arrival Time</th>
-                        <th>Status</th>
-                        <th>Airplane ID</th>
-                        <th>Price</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for f in upcoming_flights %}
-                        <tr>
-                            <td>{{ f.flight_num }}</td>
-                            <td>{{ f.departs }}</td>
-                            <td>{{ f.arrives }}</td>
-                            <td>{{ f.departure_date }}</td>
-                            <td>{{ f.departure_time }}</td>
-                            <td>{{ f.arrival_date }}</td>
-                            <td>{{ f.arrival_time }}</td>
-                            <td>{{ f.status_ }}</td>
-                            <td>{{ f.use_ }}</td>
-                            <td>{{ f.price }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>No upcoming flights for this airline in the next 30 days.</p>
-        {% endif %}
+        <!-- Filter card -->
+        <form class="filter-card" method="GET" action="{{ url_for('default_view') }}">
+            <div class="filter-title">Filter:</div>
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="from_airport">From (departure airport)</label>
+                    <input
+                        type="text"
+                        id="from_airport"
+                        name="from_airport"
+                        placeholder="e.g. JFK"
+                        value="{{ request.args.get('from_airport', '') }}"
+                    />
+                </div>
+
+                <div class="filter-group">
+                    <label for="to_airport">To (arrival airport)</label>
+                    <input
+                        type="text"
+                        id="to_airport"
+                        name="to_airport"
+                        placeholder="e.g. LAX"
+                        value="{{ request.args.get('to_airport', '') }}"
+                    />
+                </div>
+
+                <div class="filter-group">
+                    <label for="departure_from">Departure from</label>
+                    <input
+                        type="date"
+                        id="departure_from"
+                        name="departure_from"
+                        value="{{ request.args.get('departure_from', '') }}"
+                    />
+                </div>
+
+                <div class="filter-group">
+                    <label for="departure_to">Departure to</label>
+                    <input
+                        type="date"
+                        id="departure_to"
+                        name="departure_to"
+                        value="{{ request.args.get('departure_to', '') }}"
+                    />
+                </div>
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" class="btn-apply">Apply</button>
+                <!-- Clear just reloads /default_view with no query params -->
+                <button type="button" class="btn-clear">
+                    <a href="{{ url_for('default_view') }}">Clear</a>
+                </button>
+            </div>
+        </form>
+
+        <!-- Flights table -->
+        <div class="table-card">
+            {% if upcoming_flights %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Flight No</th>
+                                <th>Airline Name</th>
+                                <th>Departure Airport</th>
+                                <th>Departure Date</th>
+                                <th>Departure Time</th>
+                                <th>Arrival Airport</th>
+                                <th>Arrival Date</th>
+                                <th>Arrival Time</th>
+                                <th>Price</th>
+                                <th>Status</th>
+                                <th>Airplane ID</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for flight in upcoming_flights %}
+                            <tr>
+                                <td>{{ flight.flight_num }}</td>
+                                <td>{{ flight.operated_by }}</td>
+                                <td>{{ flight.departs }}</td>
+                                <td>{{ flight.departure_date }}</td>
+                                <td>{{ flight.departure_time }}</td>
+                                <td>{{ flight.arrives }}</td>
+                                <td>{{ flight.arrival_date }}</td>
+                                <td>{{ flight.arrival_time }}</td>
+                                <td>${{ "%.2f"|format(flight.price) }}</td>
+                                <td>{{ flight.status_ }}</td>
+                                <td>{{ flight.use_ }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-message">
+                    There are no upcoming flights for {{ airline }} in the next 30 days.
+                </div>
+            {% endif %}
+        </div>
     </div>
 </body>
 </html>

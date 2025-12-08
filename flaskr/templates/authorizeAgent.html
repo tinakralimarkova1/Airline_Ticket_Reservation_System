@@ -2,43 +2,127 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Authorize Booking Agent – {{ airline }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>Authorize Booking Agent</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: "Verdana", sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        nav {
+            background-color: rgb(54, 96, 180);
+            color: white;
+            padding: 14px 24px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+            margin-right: 20px;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        .page-container {
+            max-width: 600px;
+            margin: 30px auto 40px auto;
+            padding: 0 16px;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        .form-card {
+            border: 2px solid salmon;
+            border-radius: 10px;
+            padding: 18px 20px;
+            background-color: white;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        label {
+            font-size: 14px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px 10px;
+            font-size: 14px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            background-color: white;
+            box-sizing: border-box;
+        }
+
+        .submit-btn {
+            margin-top: 12px;
+            padding: 8px 18px;
+            font-size: 14px;
+            border-radius: 8px;
+            border: none;
+            background-color: salmon;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .submit-btn:hover {
+            background-color: #f26c5c;
+        }
+
+        .message {
+            margin-top: 14px;
+            font-size: 14px;
+            color: #116611;
+        }
+    </style>
 </head>
 <body>
+
     <nav>
-        <a href="{{ url_for('admin_home') }}">Home</a>
-        <a href="{{ url_for('add_airport') }}">Add Airport</a>
-        <a href="{{ url_for('add_airplane') }}">Add Airplane</a>
-        <a href="{{ url_for('authorize_agent') }}">Authorize Agent</a>
-        <a href="{{ url_for('logout') }}">Logout</a>
+        <a href="/">Home</a>
+        <a href="/admin_home">Admin</a>
+        <a href="/operator_home">Operator</a>
+        <a href="/logout">Logout</a>
     </nav>
 
-    <div class="container">
-        <h1>Authorize Booking Agents for {{ airline }}</h1>
+    <div class="page-container">
+        <h1>AUTHORIZE AGENT</h1>
 
-        {% if message %}
-            <p class="message">{{ message }}</p>
-        {% endif %}
+        <div class="form-card">
+            <form method="POST" action="{{ url_for('authorize_agent') }}">
+                
+                <div class="form-group">
+                    <label for="booking_agent_email">Select Booking Agent</label>
+                    <select id="booking_agent_email" name="booking_agent_email" required>
+                        <option value="">-- choose an agent --</option>
+                        {% for agent in all_agents %}
+                            <option value="{{ agent.email }}">{{ agent.email }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-        <form method="POST" action="{{ url_for('authorize_agent') }}">
-            <label for="booking_agent_email">Select Booking Agent:</label>
-            <select id="booking_agent_email" name="booking_agent_email" required>
-                <option value="">-- Choose an Agent --</option>
-                {% for agent in all_agents %}
-                    <option value="{{ agent.email }}">{{ agent.email }}</option>
-                {% endfor %}
-            </select>
+                <button type="submit" class="submit-btn">Authorize Agent</button>
+            </form>
 
-            <button type="submit">Authorize Agent</button>
-        </form>
-
-        <h2>All Booking Agents</h2>
-        <ul>
-            {% for agent in all_agents %}
-                <li>{{ agent.email }}</li>
-            {% endfor %}
-        </ul>
+            {% if message %}
+                <div class="message">{{ message }}</div>
+            {% endif %}
+        </div>
     </div>
+
 </body>
 </html>
