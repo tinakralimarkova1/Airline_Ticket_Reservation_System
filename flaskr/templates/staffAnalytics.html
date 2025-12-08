@@ -220,7 +220,7 @@
                 {% for row in delay_vs_ontime %}
                     {% if row.status_ == 'delayed' %}
                         {% set ds.delay = row.count %}
-                    {% elif row.status_ == 'on-time' %}
+                    {% elif row.status_ != 'delayed' %}
                         {% set ds.ontime = row.count %}
                     {% endif %}
                 {% endfor %}
