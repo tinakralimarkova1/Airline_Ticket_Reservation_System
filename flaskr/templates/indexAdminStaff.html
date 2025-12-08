@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Airline Staff Admin Home</title>
+    <style>
+        body {
+            font-family: Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #fdfdfd;
+        }
+
+        nav {
+            background-color: rgb(54, 96, 180);
+            color: white;
+            height: 50px;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        .page-container {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #555;
+            margin-bottom: 30px;
+        }
+
+        .card-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .card-link {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .card {
+            border: 2px solid salmon;
+            border-radius: 16px;
+            padding: 18px 20px;
+            width: 260px;
+            min-height: 120px;
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+            background-color: #fff7f4;
+        }
+
+        .card h2 {
+            margin: 0 0 8px 0;
+            font-size: 18px;
+        }
+
+        .card p {
+            margin: 0;
+            font-size: 13px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <a href="/">Home</a>
+    <a href="/login">Login</a>
+    <a href="/register">Register</a>
+</nav>
+
+<div class="page-container">
+    <h1>Welcome back, Admin!</h1>
+    <p class="subtitle">
+        What would you like to do today?
+    </p>
+
+    <div class="card-grid">
+        <!-- View upcoming flights next 30 days -->
+        <a class="card-link" href="{{ url_for('default_view') }}">
+            <div class="card">
+                <h2>View Upcoming Flights</h2>
+                <p>See all flights operated by your airline in the next 30 days</p>
+            </div>
+        </a>
+
+        <!-- Passenger list for all flights -->
+        <a class="card-link" href="{{ url_for('passenger_list') }}">
+            <div class="card">
+                <h2>Passenger Lists</h2>
+                <p>View passengers for different flights</p>
+            </div>
+        </a>
+
+        <!-- Staff analytics -->
+        <a class="card-link" href="{{ url_for('staff_analytics') }}">
+            <div class="card">
+                <h2>Staff Analytics</h2>
+                <p>Top agents, frequent customers, tickets per month, etc.</p>
+            </div>
+        </a>
+
+        <!-- Add new airport -->
+        <a class="card-link" href="{{ url_for('add_airport') }}">
+            <div class="card">
+                <h2>Add Airport</h2>
+                <p>Register a new airport in the system</p>
+            </div>
+        </a>
+
+        <!-- Add new airplane -->
+        <a class="card-link" href="{{ url_for('add_airplane') }}">
+            <div class="card">
+                <h2>Add Airplane</h2>
+                <p>Add an airplane for this airline</p>
+            </div>
+        </a>
+
+        <!-- Create new flights -->
+        <a class="card-link" href="{{ url_for('add_flight') }}">
+            <div class="card">
+                <h2>Create a new flight</h2>
+                <p>Add a new flight in the system</p>
+            </div>
+        </a>
+
+        <!-- Associate booking agents -->
+        <a class="card-link" href="{{ url_for('authorize_agent') }}">
+            <div class="card">
+                <h2>Authorize Booking Agents</h2>
+                <p>Associate booking agents with this airline so they can sell its flights</p>
+            </div>
+        </a>
+    </div>
+</div>
+
+</body>
+</html>

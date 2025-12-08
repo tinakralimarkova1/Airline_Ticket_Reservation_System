@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Airport</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: "Verdana", sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        /* Top nav bar */
+        nav {
+            background-color: rgb(54, 96, 180);
+            color: white;
+            padding: 14px 24px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+            margin-right: 20px;
+        }
+
+        nav a:hover { text-decoration: underline; }
+
+        .page-container {
+            max-width: 600px;
+            margin: 30px auto 40px auto;
+            padding: 0 16px;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        .form-card {
+            border: 2px solid salmon;
+            border-radius: 10px;
+            padding: 18px 20px;
+            background-color: white;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 8px 10px;
+            font-size: 14px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        .submit-btn {
+            margin-top: 10px;
+            padding: 8px 18px;
+            font-size: 14px;
+            border-radius: 8px;
+            border: none;
+            background-color: salmon;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .submit-btn:hover {
+            background-color: #f26c5c;
+        }
+
+        .message {
+            margin-top: 12px;
+            font-size: 14px;
+            color: #f26c5c;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/login">Login</a>
+        <a href="/register">Register</a>
+    </nav>
+
+    <div class="page-container">
+        <h1>ADD AIRPORT</h1>
+
+        <div class="form-card">
+            <form method="POST" action="{{ url_for('add_airport') }}">
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input id="name" name="name" type="text" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="city">City</label>
+                    <input id="city" name="city" type="text" required>
+                </div>
+
+                <button type="submit" class="submit-btn">Add Airport</button>
+            </form>
+
+            {% if message %}
+            <div class="message">{{ message }}</div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
+
