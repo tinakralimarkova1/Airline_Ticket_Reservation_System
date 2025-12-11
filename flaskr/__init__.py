@@ -965,12 +965,15 @@ def agent_search():
     search_query = """
         SELECT f.flight_num, f.operated_by as airline_name, f.departs, f.departure_date, 
                f.departure_time, f.arrives, f.arrival_date, f.arrival_time,
-               f.price, f.status_, f.use_ as airplane_id
-        FROM ticket as t
-        JOIN flight as f ON t.for_ = f.flight_num
+               f.price, f.status_, f.use_ as airplane_id,
+               (
+                SELECT COUNT(*)
+                FROM ticket as t
+                WHERE t.for_ = f.flight_num AND t.ticket_id NOT IN (SELECT p.ticket_id FROM purchases AS p)) as tickets_left
+        FROM flight as f
         JOIN airport AS a_depart ON f.departs = a_depart.name
         JOIN airport AS a_arrive ON f.arrives = a_arrive.name
-        WHERE f.status_ = "upcoming" AND t.ticket_id NOT IN (SELECT p.ticket_id FROM purchases as p) 
+        WHERE f.status_ = "upcoming" 
     """
     
     params = []
@@ -987,8 +990,9 @@ def agent_search():
         search_query += " AND f.departure_date = %s"
         params.append(departure_date)
 
-    search_query += "ORDER BY f.departure_date, f.departure_time"
-
+    search_query += " HAVING tickets_left > 0"
+    search_query += " ORDER BY f.departure_date, f.departure_time"
+    
     cursor.execute(search_query, tuple(params))
     flights = cursor.fetchall()
 
@@ -1105,19 +1109,23 @@ def default_view():
     end_date     = request.args.get('end_date') or None
 
     upcoming_flights_query = """
-        SELECT *
+        SELECT f.flight_num, f.operated_by AS airline_name, f.departs, f.departure_date, 
+               f.departure_time, f.arrives, f.arrival_date, f.arrival_time, f.price, f.status_, 
+               f.use_ AS airplane_id
         FROM flight as f 
+        JOIN airport AS a_depart ON f.departs = a_depart.name
+        JOIN airport AS a_arrive ON f.arrives = a_arrive.name
         WHERE f.operated_by = %s AND f.status_ = 'upcoming' AND f.departure_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
     """
     params = [airline]
 
     if from_airport:
-        upcoming_flights_query += " AND f.departs = %s"
-        params.append(from_airport)
+        upcoming_flights_query += " AND (f.departs = %s OR a_depart.host = %s)"
+        params.extend([from_airport, from_airport])
 
     if to_airport:
-        upcoming_flights_query += " AND f.arrives = %s"
-        params.append(to_airport)
+        upcoming_flights_query += " AND (f.arrives = %s OR a_arrive.host = %s)"
+        params.extend([to_airport, to_airport])
 
     if start_date:
         upcoming_flights_query += " AND f.departure_date >= %s"

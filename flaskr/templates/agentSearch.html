@@ -332,6 +332,7 @@
                         <th>Arrival Time</th>
                         <th>Price</th>
                         <th>Status</th>
+                        <th>Tickets left</th>
                         <th>Buy</th>
                     </tr>
                 </thead>
@@ -349,6 +350,7 @@
                             <td>{{ f.arrival_time }}</td>
                             <td>${{ "%.2f"|format(f.price) }}</td>
                             <td>{{ f.status_ }}</td>
+                            <td>{{ f.tickets_left }}</td>
                             <td>
                                 <!-- small Buy button opens modal via anchor -->
                                 <a href="#buy-{{ f.flight_num }}">
